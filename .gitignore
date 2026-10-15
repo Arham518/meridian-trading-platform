@@ -1,0 +1,7 @@
+node_modules
+client/dist
+server/data
+.env
+screenshots/_*.txt
+qa-tools/node_modules
+*.log

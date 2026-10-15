@@ -1,0 +1,24 @@
+{
+  "name": "meridian-trading-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Full-stack trading signals + paper-trading platform (React + Vite, Node + Express + SQLite)",
+  "type": "module",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "engines": {
+    "node": ">=22.5"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n server,client -c blue,magenta \"npm run dev -w server\" \"npm run dev -w client\"",
+    "build": "npm run build -w client",
+    "start": "npm run start -w server",
+    "seed": "npm run seed -w server",
+    "test": "npm test -w server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.5"
+  }
+}
