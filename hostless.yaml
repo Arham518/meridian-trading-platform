@@ -2,8 +2,8 @@
 # One app: Express serves the built React client, the API and socket.io on $PORT.
 build:
   system: auto
-  # --include=dev: the client build needs Vite even when NODE_ENV=production is set
-  command: "npm ci --include=dev && npm run build"
+  # dependencies are installed by the builder first
+  command: "npm run build"
 start_command: "npm start"
 health_check:
   type: http
