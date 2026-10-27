@@ -6,8 +6,12 @@ export default class Database {
   constructor(path) {
     this._db = new DatabaseSync(path);
     this._depth = 0;
+    /** Optional hook called after every statement that can change data (used by persist.js). */
+    this.onWrite = null;
   }
-  exec(sql) { return this._db.exec(sql); }
+  get raw() { return this._db; }
+  _changed() { if (this.onWrite) this.onWrite(); }
+  exec(sql) { const r = this._db.exec(sql); this._changed(); return r; }
   pragma(str) {
     const rows = this._db.prepare(`PRAGMA ${str}`).all();
     return rows;
@@ -17,7 +21,7 @@ export default class Database {
     const clean = (a) => a.map((v) => (v === undefined ? null : typeof v === 'boolean' ? (v ? 1 : 0) : v));
     const row = (r) => (r ? { ...r } : r);
     return {
-      run: (...a) => { const r = st.run(...clean(a)); return { changes: Number(r.changes), lastInsertRowid: Number(r.lastInsertRowid) }; },
+      run: (...a) => { const r = st.run(...clean(a)); this._changed(); return { changes: Number(r.changes), lastInsertRowid: Number(r.lastInsertRowid) }; },
       get: (...a) => row(st.get(...clean(a))),
       all: (...a) => st.all(...clean(a)).map(row),
     };

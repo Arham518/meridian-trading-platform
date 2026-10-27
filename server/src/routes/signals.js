@@ -39,7 +39,7 @@ const createSchema = z.object(base);
 const updateSchema = z.object({ ...base, status: z.enum(STATUSES).optional(), result_pct: z.preprocess((v) => (v === '' || v == null ? undefined : v), z.coerce.number().finite().optional()), result_pips: z.preprocess((v) => (v === '' || v == null ? undefined : v), z.coerce.number().finite().optional()), remove_image: z.preprocess((v) => v === 'true' || v === true, z.boolean()).optional() });
 
 const getRaw = (id) => db.prepare('SELECT s.*, u.name AS author FROM signals s LEFT JOIN users u ON u.id = s.created_by WHERE s.id = ?').get(id);
-const removeFile = (p) => { if (p) fs.rm(path.join(config.uploadDir, path.basename(p)), { force: true }, () => {}); };
+const removeFile = (p) => { if (p) { try { fs.rmSync(path.join(config.uploadDir, path.basename(p)), { force: true }); } catch { /* already gone */ } } };
 
 router.get('/', requireAuth, requireVerified, wrap((req, res) => {
   const r = queryDataset('signals', req.query, {}, req.query);

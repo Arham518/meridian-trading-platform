@@ -1,0 +1,20 @@
+# Hostless deployment settings (https://docs.hostless.cloud/app/hostlessfile)
+# One app: Express serves the built React client, the API and socket.io on $PORT.
+build:
+  system: auto
+  # --include=dev: the client build needs Vite even when NODE_ENV=production is set
+  command: "npm ci --include=dev && npm run build"
+start_command: "npm start"
+health_check:
+  type: http
+  http_path: "/api/health"
+  interval_in_seconds: 30
+# Keep ONE replica: live signals (socket.io), the paper-trading engine and the
+# PostgreSQL persistence layer all expect a single running process.
+# 0.25 vCPU + 512 MB leaves the other half of the free pool for the database.
+scaling:
+  max_cpu: 0.25
+  min_memory: 256
+  max_memory: 512
+  min_replicas: 1
+  max_replicas: 1

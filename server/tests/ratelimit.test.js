@@ -27,7 +27,7 @@ test('security headers are present and secrets are not exposed', async () => {
   assert.equal(res.headers.get('x-content-type-options'), 'nosniff');
   assert.equal(res.headers.get('x-powered-by'), null);
   // the persisted JWT secret must never be reachable over HTTP (an SPA fallback page is fine, the secret is not)
-  const secret = fs.readFileSync(path.join(t.dir, '.jwt-secret'), 'utf8').trim();
+  const secret = process.env.DATABASE_URL ? process.env.JWT_SECRET : fs.readFileSync(path.join(t.dir, '.jwt-secret'), 'utf8').trim();
   for (const url of ['/uploads/../.jwt-secret', '/uploads/.jwt-secret', '/.jwt-secret', '/uploads/..%2F.jwt-secret', '/data/.jwt-secret']) {
     const r = await fetch(t.base + url); const body = await r.text();
     assert.ok(!body.includes(secret), `secret leaked via ${url}`);

@@ -1,4 +1,5 @@
 import path from 'node:path';
+import os from 'node:os';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
@@ -12,12 +13,27 @@ const dq = { quiet: true };
 dotenv.config({ path: path.join(ROOT, '.env'), ...dq });
 dotenv.config({ path: path.join(SERVER_DIR, '.env'), ...dq });
 
-const dataDir = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.join(SERVER_DIR, 'data');
-fs.mkdirSync(dataDir, { recursive: true });
+// When DATABASE_URL is set (hosted mode) the local files are only a working copy: the data lives in
+// PostgreSQL (see persist.js), so the default working directory is the writable temp folder.
+const usePostgres = !!process.env.DATABASE_URL;
+let dataDir = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR)
+  : usePostgres ? path.join(os.tmpdir(), 'meridian-data') : path.join(SERVER_DIR, 'data');
+try { fs.mkdirSync(dataDir, { recursive: true }); fs.accessSync(dataDir, fs.constants.W_OK); } catch (e) {
+  if (process.env.DATA_DIR) throw e;
+  // read-only app folder (container hosts): fall back to temp storage and say so loudly
+  dataDir = path.join(os.tmpdir(), 'meridian-data');
+  fs.mkdirSync(dataDir, { recursive: true });
+  console.warn(`[config] server/data is not writable, using ${dataDir}. Data there is NOT permanent: set DATABASE_URL.`);
+}
 
 // JWT secret: use env value, otherwise generate one once and persist it next to the database.
 function resolveJwtSecret() {
   if (process.env.JWT_SECRET && process.env.JWT_SECRET.length >= 16) return process.env.JWT_SECRET;
+  if (usePostgres) {
+    // a generated secret would live only in the temporary folder and change on every restart,
+    // which signs everybody out and breaks saved 2FA secrets
+    throw new Error('JWT_SECRET must be set (32+ random characters) when DATABASE_URL is used.');
+  }
   const file = path.join(dataDir, '.jwt-secret');
   if (fs.existsSync(file)) return fs.readFileSync(file, 'utf8').trim();
   const secret = crypto.randomBytes(48).toString('hex');
@@ -28,6 +44,9 @@ function resolveJwtSecret() {
 export const config = {
   env: process.env.NODE_ENV || 'development',
   port: Number(process.env.PORT) || 4000,
+  // Hosting platforms need 0.0.0.0. Locally the default (all interfaces, IPv4 + IPv6) keeps localhost working.
+  host: process.env.HOST || (process.env.NODE_ENV === 'production' ? '0.0.0.0' : undefined),
+  databaseUrl: process.env.DATABASE_URL || '',
   dataDir,
   dbPath: process.env.DB_PATH ? path.resolve(process.env.DB_PATH) : path.join(dataDir, 'meridian.db'),
   masterXlsx: path.join(dataDir, 'records.xlsx'),

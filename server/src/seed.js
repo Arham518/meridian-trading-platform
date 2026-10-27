@@ -85,4 +85,6 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const { flushMaster } = await import('./services/excel.js');
   const { scheduleMasterRebuild } = await import('./services/excel.js');
   scheduleMasterRebuild(); await flushMaster();
+  const persist = await import('./persist.js');
+  await persist.shutdown(); // hosted mode: store the new rows in PostgreSQL before exiting
 }

@@ -120,7 +120,7 @@ const videoUpload = multer({
   limits: { fileSize: 25 * 1024 * 1024, files: 1 },
   fileFilter: (req, file, cb) => (VEXT[file.mimetype] ? cb(null, true) : cb(Object.assign(new Error('Only MP4 or WebM video up to 25 MB is allowed'), { status: 400 }))),
 });
-const dropOldVideo = () => { const cur = getSettings().hero_video_url || ''; if (cur.startsWith('/uploads/hero-')) fs.rm(path.join(config.uploadDir, path.basename(cur)), { force: true }, () => {}); };
+const dropOldVideo = () => { const cur = getSettings().hero_video_url || ''; if (cur.startsWith('/uploads/hero-')) { try { fs.rmSync(path.join(config.uploadDir, path.basename(cur)), { force: true }); } catch { /* already gone */ } } };
 router.post('/hero-video', videoUpload.single('video'), wrap((req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Choose a video file' });
   dropOldVideo(); setSetting('hero_video_url', `/uploads/${req.file.filename}`);

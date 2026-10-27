@@ -1,6 +1,7 @@
 import http from 'node:http';
 import { config } from './config.js';
 import './db.js';
+import * as persist from './persist.js';
 import { createApp } from './app.js';
 import { initRealtime, broadcastLive } from './realtime.js';
 import { startMarket, onTick, stopMarket, marketStatus } from './services/market.js';
@@ -23,18 +24,18 @@ export async function startServer({ port = config.port, quiet = false } = {}) {
   await ensureMaster();
   scheduleMasterRebuild();
 
-  await new Promise((resolve) => server.listen(port, resolve));
+  await new Promise((resolve) => (config.host ? server.listen(port, config.host, resolve) : server.listen(port, resolve)));
   const actual = server.address().port;
   if (!quiet) console.log(`[server] http://localhost:${actual}  (${config.env})`);
   return {
     server, port: actual,
-    async close() { stopMarket(); await flushMaster(); await new Promise((r) => server.close(r)); },
+    async close() { stopMarket(); await flushMaster(); await new Promise((r) => server.close(r)); await persist.shutdown(); },
   };
 }
 
 import { fileURLToPath } from 'node:url';
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   startServer().catch((e) => { console.error(e); process.exit(1); });
-  const bye = async () => { await flushMaster().catch(() => {}); process.exit(0); };
+  const bye = async () => { await flushMaster().catch(() => {}); await persist.shutdown().catch((e) => console.error('[persist]', e.message)); process.exit(0); };
   process.on('SIGINT', bye); process.on('SIGTERM', bye);
 }

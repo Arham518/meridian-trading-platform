@@ -1,10 +1,15 @@
 import Database from './sqlite.js';
 import { config } from './config.js';
+import * as persist from './persist.js';
+
+// Hosted mode (DATABASE_URL): rebuild the working SQLite file from PostgreSQL before opening it.
+const restored = persist.enabled ? await persist.restore({ dbPath: config.dbPath, uploadDir: config.uploadDir }) : null;
 
 export const db = new Database(config.dbPath);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 db.pragma('busy_timeout = 5000');
+if (restored) persist.applyChanges(db, restored);
 
 db.exec(`
 CREATE TABLE IF NOT EXISTS users (
@@ -161,6 +166,9 @@ const defaults = {
 };
 const ins = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
 for (const [k, v] of Object.entries(defaults)) ins.run(k, v);
+
+// Hosted mode: save a fresh full copy (it already contains the migrations above) and start recording changes.
+if (persist.enabled) await persist.attach(db, { uploadDir: config.uploadDir, dbPath: config.dbPath });
 
 export const getSettings = () => Object.fromEntries(db.prepare('SELECT key, value FROM settings').all().map((r) => [r.key, r.value]));
 export const setSetting = (key, value) =>

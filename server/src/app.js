@@ -5,6 +5,7 @@ import compression from 'compression';
 import fs from 'node:fs';
 import path from 'node:path';
 import { config } from './config.js';
+import { holdResponseUntilSaved } from './persist.js';
 import authRoutes from './routes/auth.js';
 import signalRoutes from './routes/signals.js';
 import marketRoutes from './routes/market.js';
@@ -18,6 +19,8 @@ export function createApp() {
   const app = express();
   app.set('trust proxy', 1);
   app.disable('x-powered-by');
+  // hosted mode: a response that follows a change is sent only after the change is stored in PostgreSQL
+  app.use(holdResponseUntilSaved);
   app.use(helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
     contentSecurityPolicy: {

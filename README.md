@@ -127,6 +127,7 @@ Copy `.env.example` to `.env`. Every value is optional. The most useful ones:
 | `REQUIRE_ADMIN_2FA` | `true` forces admins to set up two-factor authentication |
 | `SEED_DEMO` | `false` starts with an empty site |
 | `DATA_DIR` | Move the database, uploads and Excel file elsewhere |
+| `DATABASE_URL` | PostgreSQL connection string for hosting. All data is stored there and restored on start |
 
 ### Email
 
@@ -156,7 +157,15 @@ Any SMTP provider works the same way (Brevo, Mailgun, Postmark, Amazon SES, Zoho
 
 ## Deployment notes
 
-- Back up `server/data/`: it holds the database, uploads and the Excel workbook.
+The whole site runs as **one Node app**: `npm run build` builds the client, `npm start` serves the client,
+the API and socket.io on `$PORT`. Step-by-step instructions for Hostless are in [DEPLOY_HOSTLESS.md](DEPLOY_HOSTLESS.md).
+
+- On hosts without a persistent disk (Hostless free tier, Render free, Heroku-style dynos) set `DATABASE_URL`
+  to a PostgreSQL database and set `JWT_SECRET`. The app keeps working with SQLite in memory/temp storage, writes
+  every change to PostgreSQL before answering the request, and rebuilds itself from PostgreSQL on each start.
+  Uploaded signal images and the hero video are stored there too. Run a single instance.
+
+- Without `DATABASE_URL`, back up `server/data/`: it holds the database, uploads and the Excel workbook.
 - Set a strong `ADMIN_PASSWORD`, a real `APP_URL` (an `https://` address turns on secure cookies), and SMTP settings.
 - Keep `REQUIRE_ADMIN_2FA=true` in production.
 

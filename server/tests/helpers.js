@@ -4,9 +4,26 @@ import path from 'node:path';
 
 export const ADMIN = { email: 'admin@test.local', password: 'AdminPass#2026' };
 
+/**
+ * TEST_DATABASE_URL=postgres://user:pass@host:port/postgres runs the suite in hosted mode (PostgreSQL persistence):
+ * every call creates a fresh, empty database and returns its URL. Without it, returns null (plain SQLite).
+ */
+export async function freshPgUrl() {
+  const admin = process.env.TEST_DATABASE_URL;
+  if (!admin) return null;
+  const { default: pg } = await import('pg');
+  const name = `meridian_test_${process.pid}_${Math.random().toString(36).slice(2, 8)}`;
+  const c = new pg.Client({ connectionString: admin });
+  await c.connect(); await c.query(`CREATE DATABASE ${name}`); await c.end();
+  const u = new URL(admin); u.pathname = `/${name}`;
+  return u.toString();
+}
+
 /** Boots a fully isolated server (temp data dir, simulated market) on a random port. */
 export async function boot(extraEnv = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'meridian-test-'));
+  const pgUrl = await freshPgUrl();
+  if (pgUrl) Object.assign(process.env, { DATABASE_URL: pgUrl, JWT_SECRET: 'test-secret-0123456789abcdef0123456789' });
   Object.assign(process.env, {
     DATA_DIR: dir, FORCE_SIMULATED: 'true', SEED_DEMO: 'true', ADMIN_EMAIL: ADMIN.email, ADMIN_PASSWORD: ADMIN.password,
     RATE_LIMIT_AUTH: '1000', NODE_ENV: 'test', ...extraEnv,
