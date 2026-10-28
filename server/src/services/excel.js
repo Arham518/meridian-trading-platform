@@ -119,42 +119,52 @@ function masterWorkbook() {
   return wb;
 }
 
-// ---- master workbook: debounced, serialised, atomic (temp file + rename) ----
-let timer = null; let dirty = false; let current = null; let lastBuiltAt = null; let lastError = null;
+// ---- master workbook: throttled, serialised, atomic (temp file + rename) ----
+// Rebuilding the whole workbook is heavy for a 0.25 vCPU host, so changes are batched: a rebuild starts
+// MASTER_REBUILD_DELAY_MS after a change, and never sooner than MASTER_REBUILD_MIN_MS after the previous one.
+// Downloading the master file (flushMaster) always writes pending changes first, so a download is never stale.
+let timer = null; let dirty = false; let current = null; let lastBuiltAt = null; let lastError = null; let lastRunAt = 0;
 
-async function runRebuild() {
-  while (dirty) {
-    dirty = false;
-    const tmp = `${config.masterXlsx}.${process.pid}.tmp`;
-    try {
-      await masterWorkbook().xlsx.writeFile(tmp);
-      await fsp.rename(tmp, config.masterXlsx);
-      lastBuiltAt = new Date().toISOString(); lastError = null;
-    } catch (e) {
-      lastError = e.message; console.error('[excel] master rebuild failed:', e.message);
-      fsp.rm(tmp, { force: true }).catch(() => {});
-    }
+async function buildOnce() {
+  dirty = false; lastRunAt = Date.now();
+  const tmp = `${config.masterXlsx}.${process.pid}.tmp`;
+  try {
+    await masterWorkbook().xlsx.writeFile(tmp);
+    await fsp.rename(tmp, config.masterXlsx);
+    lastBuiltAt = new Date().toISOString(); lastError = null;
+  } catch (e) {
+    lastError = e.message; console.error('[excel] master rebuild failed:', e.message);
+    fsp.rm(tmp, { force: true }).catch(() => {});
   }
 }
 function kick() {
   timer = null;
-  if (!current) current = runRebuild().finally(() => { current = null; });
+  if (current) return; // the running build re-schedules itself if more changes arrive
+  current = buildOnce().finally(() => { current = null; if (dirty && !flushing) scheduleMasterRebuild(); });
 }
-export function scheduleMasterRebuild(delay = 400) {
+let flushing = false;
+export function scheduleMasterRebuild(delay = config.masterRebuildDelayMs) {
   dirty = true;
-  if (timer) clearTimeout(timer);
-  timer = setTimeout(kick, delay);
+  if (timer || current) return; // a rebuild is already scheduled (or running) and will include this change
+  const wait = Math.max(delay, lastRunAt + config.masterRebuildMinMs - Date.now(), 0);
+  timer = setTimeout(kick, wait);
+  timer.unref?.();
 }
-/** Resolves once every pending change has been written to disk. */
+/** Writes every pending change to disk now (used before a download and on shutdown). */
 export async function flushMaster() {
-  if (timer) { clearTimeout(timer); timer = null; }
-  if (dirty && !current) kick();
-  while (current) await current;
+  flushing = true;
+  try {
+    if (timer) { clearTimeout(timer); timer = null; }
+    while (current || dirty) {
+      if (current) { await current; continue; }
+      kick(); await current;
+    }
+  } finally { flushing = false; }
 }
 export function masterInfo() {
   let size = null; let modified = null;
   try { const st = fs.statSync(config.masterXlsx); size = st.size; modified = st.mtime.toISOString(); } catch { /* not built yet */ }
-  return { exists: size !== null, size, modified, lastBuiltAt, lastError, pending: dirty || !!timer || !!current };
+  return { exists: size !== null, size, modified, lastBuiltAt, lastError, pending: dirty || !!timer || !!current, minIntervalMs: config.masterRebuildMinMs };
 }
 export async function ensureMaster() {
   if (!fs.existsSync(config.masterXlsx)) { dirty = true; await flushMaster(); }

@@ -11,11 +11,20 @@ export function LogoMark({ size = 28, className = '' }) {
   );
 }
 
-export default function Logo({ name = 'Meridian', size = 26, compact = false }) {
+/** Brand lock-up: the mark on a blue rounded tile + wordmark. The tile keeps the mark readable on light and navy surfaces. */
+export function LogoTile({ size = 30, className = '' }) {
+  return (
+    <span className={`inline-grid place-items-center rounded-[9px] bg-accent text-white shadow-[inset_0_1px_0_rgba(255,255,255,.18),0_1px_2px_rgba(13,21,38,.2)] ${className}`} style={{ width: size, height: size }}>
+      <LogoMark size={Math.round(size * 0.68)} />
+    </span>
+  );
+}
+
+export default function Logo({ name = 'Meridian', size = 30, compact = false }) {
   return (
     <span className="inline-flex items-center gap-2.5 text-ink">
-      <LogoMark size={size} />
-      {!compact && <span className="font-display text-[1.55rem] leading-none tracking-[-0.01em] -mb-0.5">{name}</span>}
+      <LogoTile size={size} />
+      {!compact && <span className="font-display font-[680] text-[1.2rem] leading-none tracking-[-0.035em]">{name}</span>}
     </span>
   );
 }

@@ -8,10 +8,11 @@ import { fmtPrice, fmtPct } from '../lib/format.js';
 import { Segmented, Spinner, SimTag, ErrorState } from './ui.jsx';
 import SymbolPicker from './SymbolPicker.jsx';
 import { sma, ema, bollinger, rsi } from './indicators.js';
+import { C } from '../lib/theme.js';
 
 const FRAMES = [['1m', '1m'], ['5m', '5m'], ['15m', '15m'], ['1h', '1H'], ['4h', '4H'], ['1d', '1D'], ['1w', '1W']];
 const STEP = { '1m': 60, '5m': 300, '15m': 900, '1h': 3600, '4h': 14400, '1d': 86400, '1w': 604800 };
-const UP = '#2fbf85'; const DOWN = '#ec5560';
+const UP = C.candleUp; const DOWN = C.candleDown;
 const IND_DEFAULT = { ma: true, ema: false, bb: false, vol: true, rsi: false };
 
 /**
@@ -36,23 +37,23 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
   useEffect(() => {
     const chart = createChart(host.current, {
       autoSize: true,
-      layout: { background: { type: ColorType.Solid, color: 'transparent' }, textColor: '#a09e94', fontFamily: '"Geist Mono Variable", ui-monospace, monospace', fontSize: 11, panes: { separatorColor: 'rgba(236,232,220,0.1)' } },
-      grid: { vertLines: { color: 'rgba(236,232,220,0.03)' }, horzLines: { color: 'rgba(236,232,220,0.05)' } },
-      crosshair: { mode: CrosshairMode.Normal, vertLine: { color: 'rgba(160,158,148,.45)', labelBackgroundColor: '#242422' }, horzLine: { color: 'rgba(160,158,148,.45)', labelBackgroundColor: '#242422' } },
+      layout: { background: { type: ColorType.Solid, color: 'transparent' }, textColor: C.mute, fontFamily: '"Geist Mono Variable", ui-monospace, monospace', fontSize: 11, panes: { separatorColor: C.separator } },
+      grid: { vertLines: { color: C.gridV }, horzLines: { color: C.grid } },
+      crosshair: { mode: CrosshairMode.Normal, vertLine: { color: C.cross, labelBackgroundColor: C.crossLabel }, horzLine: { color: C.cross, labelBackgroundColor: C.crossLabel } },
       rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.08, bottom: 0.2 } },
       timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false, rightOffset: 6, barSpacing: 9 },
       handleScale: { axisPressedMouseMove: true }, kineticScroll: { touch: true, mouse: false },
     });
     chartRef.current = chart;
     s.current.candles = chart.addSeries(CandlestickSeries, { upColor: UP, downColor: DOWN, borderVisible: false, wickUpColor: UP, wickDownColor: DOWN, priceLineVisible: true, priceLineStyle: LineStyle.Dotted });
-    s.current.line = chart.addSeries(LineSeries, { color: '#e6b95a', lineWidth: 2, visible: false, priceLineVisible: true });
-    s.current.area = chart.addSeries(AreaSeries, { lineColor: '#e6b95a', topColor: 'rgba(217,164,65,0.35)', bottomColor: 'rgba(217,164,65,0)', lineWidth: 2, visible: false });
+    s.current.line = chart.addSeries(LineSeries, { color: C.accent, lineWidth: 2, visible: false, priceLineVisible: true });
+    s.current.area = chart.addSeries(AreaSeries, { lineColor: C.accent, topColor: C.accentSoft, bottomColor: C.accentFade, lineWidth: 2, visible: false });
     s.current.vol = chart.addSeries(HistogramSeries, { priceFormat: { type: 'volume' }, priceScaleId: 'vol', lastValueVisible: false, priceLineVisible: false });
     chart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
-    s.current.ma = chart.addSeries(LineSeries, { color: '#d9a441', lineWidth: 1, lastValueVisible: false, priceLineVisible: false, crosshairMarkerVisible: false });
-    s.current.ema = chart.addSeries(LineSeries, { color: '#8fa6a0', lineWidth: 1, lastValueVisible: false, priceLineVisible: false, crosshairMarkerVisible: false });
-    s.current.bbu = chart.addSeries(LineSeries, { color: 'rgba(160,158,148,.55)', lineWidth: 1, lineStyle: LineStyle.Dashed, lastValueVisible: false, priceLineVisible: false, crosshairMarkerVisible: false });
-    s.current.bbl = chart.addSeries(LineSeries, { color: 'rgba(160,158,148,.55)', lineWidth: 1, lineStyle: LineStyle.Dashed, lastValueVisible: false, priceLineVisible: false, crosshairMarkerVisible: false });
+    s.current.ma = chart.addSeries(LineSeries, { color: C.ma, lineWidth: 1, lastValueVisible: false, priceLineVisible: false, crosshairMarkerVisible: false });
+    s.current.ema = chart.addSeries(LineSeries, { color: C.ema, lineWidth: 1, lastValueVisible: false, priceLineVisible: false, crosshairMarkerVisible: false });
+    s.current.bbu = chart.addSeries(LineSeries, { color: C.bb, lineWidth: 1, lineStyle: LineStyle.Dashed, lastValueVisible: false, priceLineVisible: false, crosshairMarkerVisible: false });
+    s.current.bbl = chart.addSeries(LineSeries, { color: C.bb, lineWidth: 1, lineStyle: LineStyle.Dashed, lastValueVisible: false, priceLineVisible: false, crosshairMarkerVisible: false });
 
     chart.subscribeCrosshairMove((p) => {
       const d = p.seriesData?.get(s.current.candles) || p.seriesData?.get(s.current.line) || p.seriesData?.get(s.current.area);
@@ -77,9 +78,9 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
   useEffect(() => {
     const chart = chartRef.current; if (!chart) return;
     if (ind.rsi && !s.current.rsi) {
-      const r = chart.addSeries(LineSeries, { color: '#e6b95a', lineWidth: 1.5, priceLineVisible: false, lastValueVisible: true, priceFormat: { type: 'price', precision: 1, minMove: 0.1 } }, 1);
-      r.createPriceLine({ price: 70, color: 'rgba(236,85,96,.5)', lineWidth: 1, lineStyle: LineStyle.Dotted, axisLabelVisible: false });
-      r.createPriceLine({ price: 30, color: 'rgba(47,191,133,.5)', lineWidth: 1, lineStyle: LineStyle.Dotted, axisLabelVisible: false });
+      const r = chart.addSeries(LineSeries, { color: C.rsi, lineWidth: 1.5, priceLineVisible: false, lastValueVisible: true, priceFormat: { type: 'price', precision: 1, minMove: 0.1 } }, 1);
+      r.createPriceLine({ price: 70, color: C.downFill, lineWidth: 1, lineStyle: LineStyle.Dotted, axisLabelVisible: false });
+      r.createPriceLine({ price: 30, color: C.upFill, lineWidth: 1, lineStyle: LineStyle.Dotted, axisLabelVisible: false });
       s.current.rsi = r; chart.panes()[1]?.setHeight(110);
       r.setData(rsi(data.current));
     } else if (!ind.rsi && s.current.rsi) { chart.removeSeries(s.current.rsi); s.current.rsi = null; }
@@ -97,7 +98,7 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
       S.candles.setData(r.candles);
       S.line.setData(r.candles.map((c) => ({ time: c.time, value: c.close })));
       S.area.setData(r.candles.map((c) => ({ time: c.time, value: c.close })));
-      S.vol.setData(r.candles.map((c) => ({ time: c.time, value: c.volume, color: c.close >= c.open ? 'rgba(47,191,133,.35)' : 'rgba(236,85,96,.35)' })));
+      S.vol.setData(r.candles.map((c) => ({ time: c.time, value: c.volume, color: c.close >= c.open ? C.upVol : C.downVol })));
       applyIndicators(true);
       chartRef.current.timeScale().fitContent(); chartRef.current.timeScale().scrollToPosition(6, false);
       setState({ loading: false, error: null, source: r.source });
@@ -128,7 +129,7 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
       if (bucket > last.time) { c = { time: bucket, open: last.close, high: Math.max(last.close, q.price), low: Math.min(last.close, q.price), close: q.price, volume: 0 }; d.push(c); }
       else { c = { ...last, close: q.price, high: Math.max(last.high, q.price), low: Math.min(last.low, q.price) }; d[d.length - 1] = c; }
       S.candles.update(c); S.line.update({ time: c.time, value: c.close }); S.area.update({ time: c.time, value: c.close });
-      S.vol.update({ time: c.time, value: c.volume, color: c.close >= c.open ? 'rgba(47,191,133,.35)' : 'rgba(236,85,96,.35)' });
+      S.vol.update({ time: c.time, value: c.volume, color: c.close >= c.open ? C.upVol : C.downVol });
       applyIndicators(false);
     });
     return unsub;
@@ -163,9 +164,9 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setMenu(false)} aria-hidden />
                 <div className="absolute right-0 z-40 mt-2 w-52 glass glass-strong p-2">
-                  {[['ma', 'MA (20)', '#d9a441'], ['ema', 'EMA (50)', '#8fa6a0'], ['bb', 'Bollinger (20, 2)', '#e6b95a'], ['vol', 'Volume', '#a09e94'], ['rsi', 'RSI (14)', '#e6b95a']].map(([k, label, col]) => (
-                    <label key={k} className="flex items-center gap-2.5 px-2.5 py-2 rounded-[3px] hover:bg-white/5 cursor-pointer text-sm">
-                      <input type="checkbox" className="accent-[#d9a441] size-3.5" checked={!!ind[k]} onChange={() => tgl(k)} />
+                  {[['ma', 'MA (20)', C.ma], ['ema', 'EMA (50)', C.ema], ['bb', 'Bollinger (20, 2)', C.mute], ['vol', 'Volume', C.dim], ['rsi', 'RSI (14)', C.rsi]].map(([k, label, col]) => (
+                    <label key={k} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-ink/[0.05] cursor-pointer text-sm">
+                      <input type="checkbox" className="accent-[#1d5fe0] size-3.5" checked={!!ind[k]} onChange={() => tgl(k)} />
                       <span className="size-2 rounded-full" style={{ background: col }} />{label}
                     </label>
                   ))}

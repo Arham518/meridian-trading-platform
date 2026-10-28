@@ -121,13 +121,18 @@ Copy `.env.example` to `.env`. Every value is optional. The most useful ones:
 | Variable | Purpose |
 |---|---|
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Admin account, created on first run. A changed `ADMIN_PASSWORD` is applied on the next start. Wrap a password containing `#` in quotes |
-| `APP_URL` | Public address of the site, used for links inside emails |
+| `APP_URL` | Public address of the site (for example `https://meridian-trading.hostless.app`). Used for email links, the canonical URL, link-preview (Open Graph) tags, `robots.txt` and `sitemap.xml` |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | Real email delivery |
 | `REQUIRE_EMAIL_VERIFICATION` | `false` lets unverified users use signals and trading |
 | `REQUIRE_ADMIN_2FA` | `true` forces admins to set up two-factor authentication |
 | `SEED_DEMO` | `false` starts with an empty site |
 | `DATA_DIR` | Move the database, uploads and Excel file elsewhere |
 | `DATABASE_URL` | PostgreSQL connection string for hosting. All data is stored there and restored on start |
+| `TRUST_PROXY`, `CLIENT_IP_HEADER` | Proxy hops to trust (default `1`) and the header carrying the visitor IP (default `cf-connecting-ip`, `off` to disable) |
+| `CLEANUP_INTERVAL_HOURS`, `ACTIVITY_RETENTION_DAYS` | Automatic cleanup of expired sessions/links and of sign-in history older than 180 days (every 6 hours by default) |
+| `MASTER_REBUILD_DELAY_MS`, `MASTER_REBUILD_MIN_MS` | Excel master workbook rebuild delay (5 s) and minimum interval (5 min) |
+
+`GET /api/health` returns `status: "ok"` or `"degraded"` with the database persistence state (`persist.ok`, `pendingOps`, `lastError`, `lastSavedAt`), the Excel rebuild state and the last cleanup. It always answers HTTP 200 so a temporary database hiccup does not make the host restart the app; monitor the `status` field instead.
 
 ### Email
 

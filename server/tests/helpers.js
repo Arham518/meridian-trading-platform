@@ -26,7 +26,7 @@ export async function boot(extraEnv = {}) {
   if (pgUrl) Object.assign(process.env, { DATABASE_URL: pgUrl, JWT_SECRET: 'test-secret-0123456789abcdef0123456789' });
   Object.assign(process.env, {
     DATA_DIR: dir, FORCE_SIMULATED: 'true', SEED_DEMO: 'true', ADMIN_EMAIL: ADMIN.email, ADMIN_PASSWORD: ADMIN.password,
-    RATE_LIMIT_AUTH: '1000', NODE_ENV: 'test', ...extraEnv,
+    RATE_LIMIT_AUTH: '1000', NODE_ENV: 'test', MASTER_REBUILD_MIN_MS: '0', MASTER_REBUILD_DELAY_MS: '300', ...extraEnv,
   });
   const { startServer } = await import('../src/index.js');
   const srv = await startServer({ port: 0, quiet: true });
@@ -49,7 +49,7 @@ export async function boot(extraEnv = {}) {
   const tokenFrom = (html) => { const m = html.match(/link: [^\s]*[?]token=([^\s&]+)/); return m ? decodeURIComponent(m[1]) : null; };
   const lastToken = (to, kind) => { const all = mailsTo(to, kind); return all.length ? tokenFrom(all[all.length - 1]) : null; };
   const register = (email, name = 'Test Trader', password = 'Trader#2026a', extra = {}) =>
-    api('POST', '/api/auth/register', { body: { name, email, password, confirmPassword: password, ...extra } });
+    api('POST', '/api/auth/register', { body: { name, email, password, confirmPassword: password, acceptTerms: true, ...extra } });
   const verify = async (email) => (await api('POST', '/api/auth/verify-email', { body: { token: lastToken(email, 'verify-email') } })).status === 200;
   const registerVerified = async (email, name, password) => { const r = await register(email, name, password); await verify(email); return r; };
   const login = async (email, password) => (await api('POST', '/api/auth/login', { body: { email, password } })).body?.token;

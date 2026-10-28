@@ -9,7 +9,7 @@ import { db, getSettings, setSetting } from '../db.js';
 import { requireAuth, requireAdmin, wrap, publicUser } from '../auth.js';
 import bcrypt from 'bcryptjs';
 import { parse, emailSchema, passwordSchema, usernameSchema } from '../validate.js';
-import { DATASETS, queryDataset } from '../services/datasets.js';
+import { DATASETS, queryDataset, allRows } from '../services/datasets.js';
 import { statsFor } from '../services/signals.js';
 import { scheduleMasterRebuild } from '../services/excel.js';
 import { connectedCount, usersChanged } from '../realtime.js';
@@ -17,6 +17,7 @@ import { sendMail, mailMode, mailStatus, verifySmtp } from '../services/mailer.j
 import { templates } from '../services/emailTemplates.js';
 import { createToken, cooldownLeft, revokeUserSessions, TOKEN_TTL } from '../services/security.js';
 import { logActivity } from '../auth.js';
+import { adSchema, heroVideoSchema, describeVideo, readAds, resetAdsenseCache } from '../services/media.js';
 
 const router = Router();
 router.use(requireAuth, requireAdmin);
@@ -49,6 +50,23 @@ router.get('/records/:type', wrap((req, res) => {
 }));
 
 router.get('/users', wrap((req, res) => res.json(queryDataset('users', req.query, {}, req.query))));
+
+// CSV of the users list (same filters as the table). Password hashes and 2FA secrets are never included.
+const csvCell = (v) => {
+  if (v === null || v === undefined) return '';
+  let t = String(v);
+  if (/^[=+\-@\t\r]/.test(t)) t = `'${t}`; // stop spreadsheet formula injection
+  return /[",\r\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
+};
+router.get('/users/export.csv', wrap((req, res) => {
+  const cols = DATASETS.users.columns;
+  const rows = allRows('users', req.query);
+  const lines = [cols.map((c) => csvCell(c.header)).join(','), ...rows.map((r) => cols.map((c) => csvCell(c.type === 'bool' ? (r[c.key] ? 'yes' : 'no') : r[c.key])).join(','))];
+  logActivity({ userId: req.user.id, email: req.user.email, event: 'admin_export_users', req });
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="users-${new Date().toISOString().slice(0, 10)}.csv"`);
+  res.send(`\ufeff${lines.join('\r\n')}\r\n`);
+}));
 
 // ------------------------------------------------------------------ user management (create / edit / password)
 const DEFAULT_WATCH = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'EURUSD', 'XAUUSD'];
@@ -103,6 +121,32 @@ router.patch('/users/:id', wrap((req, res) => {
   const after = getUser(id);
   if (set.length) changed(after, req, 'admin_update_user');
   res.json({ user: publicUser(after) });
+}));
+
+// Permanently deletes an account. Its watchlist, orders, trades, sessions, tokens and backup codes are removed
+// with it (ON DELETE CASCADE); sign-in history and email log rows are kept for the audit trail but anonymised.
+router.delete('/users/:id', wrap((req, res) => {
+  const id = Number(req.params.id);
+  const u = getUser(id);
+  if (!u) return res.status(404).json({ error: 'User not found' });
+  if (id === req.user.id) return res.status(400).json({ error: 'You cannot delete your own account' });
+  if (u.role === 'admin' && !otherActiveAdmins(id)) return res.status(400).json({ error: 'This is the last admin. Make another user admin first.' });
+  const tag = `deleted-user-${id}`;
+  const counts = db.transaction(() => {
+    const c = {
+      trades: db.prepare('SELECT COUNT(*) n FROM trades WHERE user_id = ?').get(id).n,
+      orders: db.prepare('SELECT COUNT(*) n FROM orders WHERE user_id = ?').get(id).n,
+    };
+    db.prepare('UPDATE login_activity SET user_id = NULL, email = ?, ip = NULL, user_agent = NULL WHERE user_id = ? OR email = ?').run(tag, id, u.email);
+    db.prepare("UPDATE mail_log SET to_addr = ?, html = NULL, link = NULL WHERE to_addr = ? COLLATE NOCASE").run(tag, u.email);
+    db.prepare('UPDATE signals SET created_by = NULL WHERE created_by = ?').run(id);
+    for (const t of ['watchlists', 'trades', 'orders', 'sessions', 'auth_tokens', 'backup_codes']) db.prepare(`DELETE FROM ${t} WHERE user_id = ?`).run(id);
+    db.prepare('DELETE FROM users WHERE id = ?').run(id);
+    return c;
+  })();
+  logActivity({ userId: req.user.id, email: req.user.email, event: 'admin_delete_user', req });
+  scheduleMasterRebuild(); usersChanged('admin_delete_user');
+  res.json({ ok: true, deleted: { id, email: u.email, ...counts } });
 }));
 
 router.post('/users/:id/password', wrap((req, res) => {
@@ -180,38 +224,70 @@ router.post('/users/:id/unlock', wrap((req, res) => {
   res.json({ ok: true });
 }));
 
-const adSchema = z.object({
-  slot: z.enum(['landing', 'dashboard']),
-  title: z.string().trim().min(1).max(60), text: z.string().trim().max(140).default(''), cta: z.string().trim().max(24).default('Learn more'),
-  url: z.string().trim().max(500).regex(/^https?:\/\//, 'must start with http:// or https://'), enabled: z.boolean().default(true),
-});
-const mediaUrl = z.string().trim().max(500).refine((v) => v === '' || /^(https:\/\/|http:\/\/|\/uploads\/)/.test(v), 'must be an https:// URL or an uploaded file');
-
-const adminSettings = () => { const s = getSettings(); let ads = []; try { ads = JSON.parse(s.ads || '[]'); } catch { /* corrupt value: start empty */ } return { site_name: s.site_name, tagline: s.tagline, hero_video_url: s.hero_video_url || '', ads }; };
+const adminSettings = () => { const s = getSettings(); return { site_name: s.site_name, tagline: s.tagline, hero_video_url: s.hero_video_url || '', hero_video: describeVideo(s.hero_video_url), ads: readAds(s.ads) }; };
 router.get('/settings', wrap((req, res) => res.json({ settings: adminSettings() })));
 router.put('/settings', wrap((req, res) => {
-  const d = parse(z.object({ site_name: z.string().trim().min(2).max(40), tagline: z.string().trim().max(140).optional(), hero_video_url: mediaUrl.optional(), ads: z.array(adSchema).max(4).optional() }), req.body);
+  const d = parse(z.object({ site_name: z.string().trim().min(2).max(40), tagline: z.string().trim().max(140).optional(), hero_video_url: heroVideoSchema.optional(), ads: z.array(adSchema).max(12).optional() }), req.body);
   setSetting('site_name', d.site_name);
   if (d.tagline !== undefined) setSetting('tagline', d.tagline);
-  if (d.hero_video_url !== undefined) setSetting('hero_video_url', d.hero_video_url);
-  if (d.ads !== undefined) setSetting('ads', JSON.stringify(d.ads));
+  if (d.hero_video_url !== undefined) { if (d.hero_video_url !== getSettings().hero_video_url) dropOldVideo(); setSetting('hero_video_url', d.hero_video_url); }
+  if (d.ads !== undefined) {
+    const before = readAds(getSettings().ads);
+    const ads = d.ads.map((a, i) => ({ ...a, id: a.id || `ad${Date.now().toString(36)}${i}` }));
+    setSetting('ads', JSON.stringify(ads));
+    dropUnusedAdImages(before, ads);
+    resetAdsenseCache();
+  }
   scheduleMasterRebuild();
   res.json({ settings: adminSettings() });
 }));
 
-// optional hero video: MP4 / WebM up to 25 MB, stored next to the other uploads
-const VEXT = { 'video/mp4': '.mp4', 'video/webm': '.webm' };
+// ---- hero video: MP4 / WebM / MOV up to 25 MB, stored next to the other uploads (and in PostgreSQL in hosted mode)
+const VEXT = { 'video/mp4': '.mp4', 'video/webm': '.webm', 'video/quicktime': '.mov' };
+const VIDEO_MB = 25;
 const videoUpload = multer({
   storage: multer.diskStorage({ destination: config.uploadDir, filename: (req, file, cb) => cb(null, `hero-${crypto.randomBytes(6).toString('hex')}${VEXT[file.mimetype] || '.bin'}`) }),
-  limits: { fileSize: 25 * 1024 * 1024, files: 1 },
-  fileFilter: (req, file, cb) => (VEXT[file.mimetype] ? cb(null, true) : cb(Object.assign(new Error('Only MP4 or WebM video up to 25 MB is allowed'), { status: 400 }))),
+  limits: { fileSize: VIDEO_MB * 1024 * 1024, files: 1 },
+  fileFilter: (req, file, cb) => (VEXT[file.mimetype] ? cb(null, true) : cb(Object.assign(new Error(`Only MP4, WebM or MOV video up to ${VIDEO_MB} MB is allowed`), { status: 400 }))),
+});
+// multer reports an oversized file as a generic error: turn it into a clear 413 message
+const runUpload = (mw, msg) => (req, res, next) => mw(req, res, (err) => {
+  if (err?.code === 'LIMIT_FILE_SIZE') return next(Object.assign(new Error(msg), { status: 413 }));
+  return next(err);
 });
 const dropOldVideo = () => { const cur = getSettings().hero_video_url || ''; if (cur.startsWith('/uploads/hero-')) { try { fs.rmSync(path.join(config.uploadDir, path.basename(cur)), { force: true }); } catch { /* already gone */ } } };
-router.post('/hero-video', videoUpload.single('video'), wrap((req, res) => {
+router.post('/hero-video', runUpload(videoUpload.single('video'), `The video is larger than ${VIDEO_MB} MB. Compress it (for example with HandBrake) or use a YouTube / Vimeo / https:// link.`), wrap((req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Choose a video file' });
   dropOldVideo(); setSetting('hero_video_url', `/uploads/${req.file.filename}`);
-  res.json({ heroVideoUrl: `/uploads/${req.file.filename}` });
+  logActivity({ userId: req.user.id, email: req.user.email, event: 'admin_hero_video', req });
+  res.json({ heroVideoUrl: `/uploads/${req.file.filename}`, heroVideo: describeVideo(`/uploads/${req.file.filename}`) });
+}));
+// set the hero video from a link (saved immediately, no need to press "Save settings")
+router.put('/hero-video', wrap((req, res) => {
+  const d = parse(z.object({ url: heroVideoSchema }), req.body);
+  if (d.url !== getSettings().hero_video_url) dropOldVideo();
+  setSetting('hero_video_url', d.url);
+  res.json({ heroVideoUrl: d.url || null, heroVideo: describeVideo(d.url) });
 }));
 router.delete('/hero-video', wrap((req, res) => { dropOldVideo(); setSetting('hero_video_url', ''); res.json({ heroVideoUrl: null }); }));
+
+// ---- ad images: PNG / JPEG / WebP / GIF up to 2 MB
+const IEXT = { 'image/png': '.png', 'image/jpeg': '.jpg', 'image/webp': '.webp', 'image/gif': '.gif' };
+const imageUpload = multer({
+  storage: multer.diskStorage({ destination: config.uploadDir, filename: (req, file, cb) => cb(null, `ad-${crypto.randomBytes(6).toString('hex')}${IEXT[file.mimetype] || '.bin'}`) }),
+  limits: { fileSize: 2 * 1024 * 1024, files: 1 },
+  fileFilter: (req, file, cb) => (IEXT[file.mimetype] ? cb(null, true) : cb(Object.assign(new Error('Only PNG, JPEG, WebP or GIF images up to 2 MB are allowed'), { status: 400 }))),
+});
+router.post('/ad-image', runUpload(imageUpload.single('image'), 'The image is larger than 2 MB.'), wrap((req, res) => {
+  if (!req.file) return res.status(400).json({ error: 'Choose an image file' });
+  res.status(201).json({ image: `/uploads/${req.file.filename}` });
+}));
+/** Removes uploaded ad images that no saved ad uses any more. */
+function dropUnusedAdImages(before, after) {
+  const keep = new Set(after.map((a) => a.image).filter(Boolean));
+  for (const a of before) {
+    if (a.image && a.image.startsWith('/uploads/ad-') && !keep.has(a.image)) { try { fs.rmSync(path.join(config.uploadDir, path.basename(a.image)), { force: true }); } catch { /* gone */ } }
+  }
+}
 
 export default router;

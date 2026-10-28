@@ -61,12 +61,15 @@ router.post('/register', limiter, wrap(async (req, res) => {
   const d = parse(z.object({
     name: z.string().trim().min(2, 'must be at least 2 characters').max(60), username: usernameSchema.optional().or(z.literal('').transform(() => undefined)),
     email: emailSchema, password: passwordSchema, confirmPassword: z.string(),
+    acceptTerms: z.boolean().optional(),
   }), req.body);
   if (d.password !== d.confirmPassword) return res.status(400).json({ error: 'confirmPassword: passwords do not match', details: [{ field: 'confirmPassword', message: 'passwords do not match' }] });
+  if (d.acceptTerms !== true) return res.status(400).json({ error: 'acceptTerms: you must agree to the Terms of Service and Privacy Policy', details: [{ field: 'acceptTerms', message: 'you must agree to the Terms of Service and Privacy Policy' }] });
   if (db.prepare('SELECT id FROM users WHERE email = ?').get(d.email)) return res.status(409).json({ error: 'An account with this email already exists' });
   if (d.username && db.prepare('SELECT id FROM users WHERE username = ?').get(d.username)) return res.status(409).json({ error: 'That username is taken' });
-  const info = db.prepare('INSERT INTO users (name, username, email, password_hash, balance, last_login_at) VALUES (?,?,?,?,?,?)')
-    .run(d.name, d.username || null, d.email, bcrypt.hashSync(d.password, 11), config.startBalance, new Date().toISOString());
+  const now = new Date().toISOString();
+  const info = db.prepare('INSERT INTO users (name, username, email, password_hash, balance, last_login_at, terms_accepted_at) VALUES (?,?,?,?,?,?,?)')
+    .run(d.name, d.username || null, d.email, bcrypt.hashSync(d.password, 11), config.startBalance, now, now);
   const ins = db.prepare('INSERT OR IGNORE INTO watchlists (user_id, symbol) VALUES (?, ?)');
   for (const s of DEFAULT_WATCH) ins.run(info.lastInsertRowid, s);
   const user = getUser(info.lastInsertRowid);

@@ -17,12 +17,12 @@ function Fallback() {
         const x = 40 + i * 66; const top = Math.max(o, c); const bot = Math.min(o, c);
         return (
           <g key={i}>
-            <line x1={x + 18} x2={x + 18} y1={y(h)} y2={y(l)} stroke="#b89a5a" strokeWidth="2" />
-            <rect x={x} y={y(top)} width="36" height={Math.max((top - bot) * 100, 6)} fill={c >= o ? '#2b8a66' : '#a4474d'} />
+            <line x1={x + 18} x2={x + 18} y1={y(h)} y2={y(l)} stroke="#8fb2ff" strokeWidth="2" />
+            <rect x={x} y={y(top)} width="36" height={Math.max((top - bot) * 100, 6)} fill={c >= o ? '#2fbf85' : '#e0566a'} />
           </g>
         );
       })}
-      <line x1="20" x2="620" y1="330" y2="330" stroke="rgba(236,232,220,.14)" />
+      <line x1="20" x2="620" y1="330" y2="330" stroke="rgba(242,245,250,.16)" />
     </svg>
   );
 }

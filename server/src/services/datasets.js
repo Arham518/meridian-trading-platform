@@ -110,7 +110,7 @@ export const DATASETS = {
   users: {
     sheet: 'Users',
     from: 'users u',
-    select: '(SELECT COUNT(*) FROM trades t WHERE t.user_id = u.id) AS trades_count, u.id, u.name, u.username, u.email, u.email_verified_at, u.totp_enabled, u.locked_until, u.role, u.status, u.balance, u.is_demo, u.created_at, u.last_login_at',
+    select: '(SELECT COUNT(*) FROM trades t WHERE t.user_id = u.id) AS trades_count, u.id, u.name, u.username, u.email, u.email_verified_at, u.totp_enabled, u.locked_until, u.role, u.status, u.balance, u.is_demo, u.created_at, u.last_login_at, u.terms_accepted_at',
     order: 'u.created_at DESC, u.id DESC',
     where(f, ctx, w, p) {
       if (f.role) { w.push('u.role = ?'); p.push(f.role); }
@@ -133,6 +133,7 @@ export const DATASETS = {
       { header: 'Trades', key: 'trades_count', width: 9, type: 'int' },
       { header: 'Registered (UTC)', key: 'created_at', width: 20, type: 'datetime' },
       { header: 'Last login (UTC)', key: 'last_login_at', width: 20, type: 'datetime' },
+      { header: 'Terms accepted (UTC)', key: 'terms_accepted_at', width: 21, type: 'datetime' },
       { header: 'Demo data', key: 'is_demo', width: 10, type: 'bool' },
     ],
   },

@@ -12,6 +12,7 @@ import { useFetch } from '../lib/hooks.js';
 import { api, qs } from '../lib/api.js';
 import { usePortfolio } from '../lib/usePortfolio.js';
 import { fmtMoney, fmtSigned } from '../lib/format.js';
+import { C } from '../lib/theme.js';
 
 export default function Trade() {
   const { symbol: param } = useParams(); const nav = useNavigate();
@@ -26,12 +27,12 @@ export default function Trade() {
     if (!showLevels) return [];
     const out = [];
     (sigs.data?.rows || []).filter((s) => s.pair === symbol).forEach((s) => {
-      out.push({ price: s.entry, color: '#cfcdc4', title: `Signal ${s.direction} entry` }, { price: s.stopLoss, color: '#ec5560', title: 'Signal SL' }, { price: s.tp1, color: '#2fbf85', title: 'Signal TP1' });
-      if (s.tp2) out.push({ price: s.tp2, color: '#2fbf85', title: 'Signal TP2' });
+      out.push({ price: s.entry, color: C.ink, title: `Signal ${s.direction} entry` }, { price: s.stopLoss, color: C.down, title: 'Signal SL' }, { price: s.tp1, color: C.up, title: 'Signal TP1' });
+      if (s.tp2) out.push({ price: s.tp2, color: C.up, title: 'Signal TP2' });
     });
     (p?.open || []).filter((t) => t.symbol === symbol).forEach((t) => {
-      out.push({ price: t.entry_price, color: '#d9a441', title: `My ${t.side}`, solid: true });
-      if (t.stop_loss) out.push({ price: t.stop_loss, color: '#ec5560', title: 'My SL' }); if (t.take_profit) out.push({ price: t.take_profit, color: '#2fbf85', title: 'My TP' });
+      out.push({ price: t.entry_price, color: C.accent, title: `My ${t.side}`, solid: true });
+      if (t.stop_loss) out.push({ price: t.stop_loss, color: C.down, title: 'My SL' }); if (t.take_profit) out.push({ price: t.take_profit, color: C.up, title: 'My TP' });
     });
     return out;
   }, [sigs.data, p, symbol, showLevels]);

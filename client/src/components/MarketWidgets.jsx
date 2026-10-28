@@ -16,7 +16,7 @@ export function useQuoteList() {
 
 const tone = (p) => {
   const a = Math.min(Math.abs(p) / 4, 1);
-  return p >= 0 ? `rgba(47,191,133,${0.14 + a * 0.5})` : `rgba(236,85,96,${0.14 + a * 0.5})`;
+  return p >= 0 ? `rgba(18,161,96,${0.12 + a * 0.42})` : `rgba(224,56,75,${0.12 + a * 0.42})`;
 };
 
 /** Market overview heat-map: tile colour = 24h change. */
@@ -26,10 +26,10 @@ export const Heatmap = memo(function Heatmap() {
   return (
     <div className="grid gap-1 [grid-template-columns:repeat(auto-fill,minmax(84px,1fr))]">
       {list.map((q) => (
-        <Link key={q.symbol} to={`/app/trade/${q.symbol}`} className="rounded-[3px] px-2.5 py-2 transition-[filter] hover:brightness-125"
+        <Link key={q.symbol} to={`/app/trade/${q.symbol}`} className="rounded-xl px-2.5 py-2.5 border border-white/60 transition-[filter,transform] hover:brightness-95 hover:-translate-y-px"
           style={{ background: tone(q.changePct) }} title={`${q.name}: ${fmtPct(q.changePct)}`}>
           <div className="text-[12px] font-semibold truncate">{pairLabel(q.symbol).replace('/USDT', '')}</div>
-          <div className="num text-[12px] text-ink/90 mt-0.5">{fmtPct(q.changePct, 2)}</div>
+          <div className="num text-[12px] text-ink mt-0.5">{fmtPct(q.changePct, 2)}</div>
         </Link>
       ))}
     </div>
@@ -44,7 +44,7 @@ export function Movers() {
     <div className="min-w-0">
       <div className="label mb-1.5">{title}</div>
       {items.map((q) => (
-        <Link key={q.symbol} to={`/app/trade/${q.symbol}`} className="flex items-center justify-between gap-2 py-1.5 border-b border-line last:border-0 hover:bg-white/[0.03]">
+        <Link key={q.symbol} to={`/app/trade/${q.symbol}`} className="flex items-center justify-between gap-2 py-1.5 border-b border-line last:border-0 hover:bg-ink/[0.03]">
           <span className="text-[13px] font-medium truncate">{pairLabel(q.symbol)}</span>
           <Change pct={q.changePct} className="text-[12px] text-right" />
         </Link>
@@ -66,7 +66,7 @@ export function NewsList({ limit = 6 }) {
         {data.items.slice(0, limit).map((n, i) => (
           <li key={i} className="border-b border-line/60 last:border-0">
             {n.link && n.link !== '#' ? (
-              <a href={n.link} target="_blank" rel="noopener noreferrer" className="flex gap-3 px-4 py-3 hover:bg-white/[0.04] group">
+              <a href={n.link} target="_blank" rel="noopener noreferrer" className="flex gap-3 px-4 py-3 hover:bg-ink/[0.04] group">
                 <div className="min-w-0 flex-1"><p className="text-[13.5px] leading-snug group-hover:text-accent-2 transition-colors">{n.title}</p><p className="text-[11px] text-dim mt-1">{n.source}{n.time ? ` · ${timeAgo(n.time)}` : ''}</p></div>
                 <ArrowUpRight size={14} className="text-dim shrink-0 mt-0.5" />
               </a>
@@ -87,7 +87,7 @@ export function SignalRows({ rows = [] }) {
     <ul>
       {rows.map((s) => (
         <li key={s.id} className="border-b border-line last:border-0">
-          <Link to="/app/signals" className="grid grid-cols-[34px_minmax(0,1fr)_auto] items-center gap-x-2.5 px-3.5 py-2.5 hover:bg-white/[0.03]">
+          <Link to="/app/signals" className="grid grid-cols-[34px_minmax(0,1fr)_auto] items-center gap-x-2.5 px-3.5 py-2.5 hover:bg-ink/[0.03]">
             <span className={clsx('num text-[11px] font-semibold', s.direction === 'BUY' ? 'up' : 'down')}>{s.direction}</span>
             <span className="min-w-0"><span className="text-[13px] font-medium block truncate">{pairLabel(s.pair)}<span className="text-dim font-normal num"> {s.timeframe}</span></span>
               <span className="text-[11px] text-mute num block truncate">E {fmtPrice(s.entry)}  SL {fmtPrice(s.stopLoss)}  TP {fmtPrice(s.tp1)}</span></span>

@@ -41,7 +41,7 @@ test('register validates input, hashes password, rejects duplicates', async () =
   assert.equal(r.status, 201);
   assert.equal(r.body.user.role, 'user');
   userTok = r.body.token; userId = r.body.user.id;
-  assert.equal((await t.api('POST', '/api/auth/register', { body: { name: 'Dup', email: email.toUpperCase(), password: PW, confirmPassword: PW } })).status, 409);
+  assert.equal((await t.api('POST', '/api/auth/register', { body: { name: 'Dup', email: email.toUpperCase(), password: PW, confirmPassword: PW, acceptTerms: true } })).status, 409);
   const r2 = await t.registerVerified(`second${Date.now()}@example.com`, 'Second Trader', PW);
   user2Tok = r2.body.token;
   const { db } = await import('../src/db.js');

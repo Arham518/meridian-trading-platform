@@ -83,6 +83,23 @@ export const config = {
   verifyCooldownSeconds: Number(process.env.MAIL_COOLDOWN_SECONDS ?? 60),
   refreshGraceMs: Number(process.env.REFRESH_GRACE_MS ?? 10000),
   requireAdmin2fa: process.env.REQUIRE_ADMIN_2FA === 'true',
+  // --- proxies + client IP ---
+  // Number of proxy hops in front of the app (Hostless router = 1), or any value Express accepts for 'trust proxy'.
+  trustProxy: parseTrustProxy(process.env.TRUST_PROXY ?? '1'),
+  // Header with the real visitor IP set by a CDN in front of the host (Cloudflare). Set CLIENT_IP_HEADER=off to ignore it.
+  clientIpHeader: (process.env.CLIENT_IP_HEADER ?? 'cf-connecting-ip').toLowerCase(),
+  // --- background jobs ---
+  masterRebuildMinMs: Number(process.env.MASTER_REBUILD_MIN_MS ?? 5 * 60 * 1000), // records.xlsx is rebuilt at most this often
+  masterRebuildDelayMs: Number(process.env.MASTER_REBUILD_DELAY_MS ?? 5000),     // quiet time after a change before a rebuild
+  cleanupHours: Number(process.env.CLEANUP_INTERVAL_HOURS) || 6,
+  activityRetentionDays: Number(process.env.ACTIVITY_RETENTION_DAYS) || 180,
 };
+
+function parseTrustProxy(v) {
+  if (v === 'true') return true;
+  if (v === 'false') return false;
+  if (/^\d+$/.test(v)) return Number(v);
+  return v; // e.g. 'loopback, 10.0.0.0/8'
+}
 fs.mkdirSync(config.uploadDir, { recursive: true });
 if (!config.smtp) fs.mkdirSync(config.outboxDir, { recursive: true });

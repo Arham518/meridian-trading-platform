@@ -156,7 +156,7 @@ function TwoFactor() {
             <div className="text-[12.5px] text-mute space-y-2 min-w-0">
               <p>1. Scan the code with your authenticator app.</p>
               <p>2. Or enter this key manually:</p>
-              <code className="num block break-all text-ink text-[13px] border border-line-2 rounded-[3px] px-2 py-1.5" data-testid="totp-secret">{setup.secret}</code>
+              <code className="num block break-all text-ink text-[13px] border border-line-2 rounded-lg px-2 py-1.5" data-testid="totp-secret">{setup.secret}</code>
               <p>3. Type the 6-digit code it shows.</p>
             </div>
           </div>

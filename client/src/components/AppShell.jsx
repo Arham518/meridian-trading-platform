@@ -1,12 +1,13 @@
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, Link, useLocation, useNavigate, useOutlet } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { LayoutDashboard, BarChart3, CandlestickChart, Radio, History, Database, UserCircle, ShieldCheck, Megaphone, Users, FileSpreadsheet, Settings, LogOut, Menu, X, ArrowUpRight, ArrowDownRight, MailWarning, ShieldAlert, CircleCheck, CircleX, Target, Download, Mail } from 'lucide-react';
+import { LayoutDashboard, BarChart3, CandlestickChart, Radio, History, Database, UserCircle, ShieldCheck, Megaphone, Users, FileSpreadsheet, Settings, LogOut, Menu, X, ArrowUpRight, ArrowDownRight, MailWarning, ShieldAlert, CircleCheck, CircleX, Target, Download, Mail, Search, Bell, ChevronDown, LineChart, MoreHorizontal } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
-import Logo from './Logo.jsx';
+import Logo, { LogoTile } from './Logo.jsx';
 import TickerTape from './TickerTape.jsx';
 import { Skeleton } from './ui.jsx';
+import AdSlot from './AdSlot.jsx';
 import { useAuth } from '../store/auth.js';
 import { useMarket } from '../store/market.js';
 import { useSettings } from '../store/settings.js';
@@ -37,50 +38,171 @@ const ADMIN_NAV = [
   { to: '/admin/settings', label: 'Site settings', icon: Settings },
 ];
 
-function NavItem({ item, onClick }) {
+function NavItem({ item, onClick, slim }) {
   return (
-    <NavLink to={item.to} end={item.end} onClick={onClick}
-      className={({ isActive }) => clsx('group relative flex items-center gap-2.5 h-8 px-3 rounded-[3px] text-[0.8125rem] font-medium transition-colors', isActive ? 'bg-white/[0.06] text-ink' : 'text-mute hover:text-ink hover:bg-white/[0.03]')}>
+    <NavLink to={item.to} end={item.end} onClick={onClick} title={slim ? item.label : undefined}
+      className={({ isActive }) => clsx('group relative flex items-center gap-3 h-10 rounded-xl text-[0.84rem] font-medium transition-colors',
+        slim ? 'px-3 xl:px-3.5 justify-center xl:justify-start' : 'px-3.5',
+        isActive ? 'bg-white/[0.08] text-ink' : 'text-mute hover:text-ink hover:bg-white/[0.04]')}>
       {({ isActive }) => (<>
-        {isActive && <motion.span layoutId="nav-active" className="absolute left-0 top-1.5 bottom-1.5 w-[2px] bg-accent" />}
-        <item.icon size={15} strokeWidth={1.75} className={isActive ? 'text-accent-2' : ''} />{item.label}
+        {isActive && <motion.span layoutId={slim ? 'nav-active' : 'nav-active-m'} className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r bg-accent-2" />}
+        <item.icon size={18} strokeWidth={1.8} className={clsx('shrink-0', isActive ? 'text-accent-2' : '')} />
+        <span className={clsx(slim && 'hidden xl:inline', 'truncate')}>{item.label}</span>
       </>)}
     </NavLink>
   );
 }
 
-function SidebarContent({ onNavigate }) {
+function SidebarContent({ onNavigate, slim = false }) {
   const user = useAuth((s) => s.user); const logout = useAuth((s) => s.logout); const nav = useNavigate();
   const siteName = useSettings((s) => s.siteName);
   const connected = useMarket((s) => s.connected); const status = useMarket((s) => s.status);
   const out = async () => { await logout(); nav('/'); toast.success('Signed out'); };
+  const group = (t, extra) => <div className={clsx('label px-3.5 mb-2 !text-dim', slim && 'hidden xl:block', extra)}>{t}</div>;
   return (
     <div className="flex flex-col h-full">
-      <div className="h-14 px-4 flex items-center border-b border-line shrink-0"><Link to="/app" onClick={onNavigate}><Logo name={siteName} /></Link></div>
-      <nav className="flex-1 overflow-y-auto px-2.5 py-4 space-y-5" aria-label="Main">
+      <div className={clsx('h-16 flex items-center shrink-0', slim ? 'px-4 justify-center xl:justify-start xl:px-5' : 'px-5')}>
+        <Link to="/app" onClick={onNavigate} aria-label={`${siteName} dashboard`}>{slim ? <><span className="xl:hidden"><LogoTile size={34} /></span><span className="hidden xl:inline-flex"><Logo name={siteName} /></span></> : <Logo name={siteName} />}</Link>
+      </div>
+      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-6" aria-label="Main">
         {NAV.map((g) => (
-          <div key={g.group}><div className="label px-3 mb-1.5">{g.group}</div><div className="space-y-0.5">{g.items.map((i) => <NavItem key={i.to} item={i} onClick={onNavigate} />)}</div></div>
+          <div key={g.group}>{group(g.group)}<div className="space-y-1">{g.items.map((i) => <NavItem key={i.to} item={i} onClick={onNavigate} slim={slim} />)}</div></div>
         ))}
-        {user?.role === 'admin' && <div><div className="label px-3 mb-1.5 text-accent-2">Administration</div><div className="space-y-0.5">{ADMIN_NAV.map((i) => <NavItem key={i.to} item={i} onClick={onNavigate} />)}</div></div>}
+        {user?.role === 'admin' && <div>{group('Administration', '!text-accent-2')}{slim && <div className="xl:hidden mx-3 mb-2 border-t border-line" />}<div className="space-y-1">{ADMIN_NAV.map((i) => <NavItem key={i.to} item={i} onClick={onNavigate} slim={slim} />)}</div></div>}
       </nav>
-      <div className="p-3 border-t border-line space-y-3 shrink-0">
+      <div className={clsx('p-3 border-t border-line space-y-3 shrink-0', slim && 'hidden xl:block')}>
         <div className="flex items-center gap-2 text-[11px] text-mute px-1">
           <span className={clsx('size-1.5 rounded-full', connected ? 'bg-up live-dot !size-1.5' : 'bg-warn')} />
           <span>{connected ? 'Live feed' : 'Reconnecting'}</span>
-          <span className="ml-auto badge badge-neutral !h-[18px] num">{status?.cryptoSource === 'binance' ? 'BINANCE' : 'SIM'}</span>
+          <span className="ml-auto badge badge-neutral !h-[20px] num">{status?.cryptoSource === 'binance' ? 'BINANCE' : 'SIM'}</span>
         </div>
         <div className="flex items-center gap-2.5 px-1 py-1">
-          <div className="size-8 rounded-[3px] border border-line-2 grid place-items-center text-[12px] font-semibold text-ink shrink-0">{user?.name?.[0]?.toUpperCase()}</div>
+          <Avatar name={user?.name} />
           <div className="min-w-0 flex-1"><div className="text-[13px] font-medium truncate">{user?.name}</div><div className="text-[11px] text-mute capitalize">{user?.role}</div></div>
           <button className="btn btn-ghost btn-sm btn-icon" onClick={out} aria-label="Sign out" title="Sign out"><LogOut size={15} /></button>
         </div>
       </div>
+      {slim && <div className="xl:hidden p-3 border-t border-line flex justify-center"><button className="btn btn-ghost btn-icon" onClick={out} aria-label="Sign out" title="Sign out"><LogOut size={16} /></button></div>}
     </div>
   );
 }
 
+const Avatar = ({ name, size = 'size-9' }) => (
+  <span className={clsx(size, 'rounded-full grid place-items-center text-[13px] font-semibold text-white shrink-0 bg-[linear-gradient(135deg,#2f6bea,#0f3a91)] ring-2 ring-white/10')} aria-hidden>{name?.[0]?.toUpperCase()}</span>
+);
+
+/** Symbol search in the top bar: type a pair or a name, Enter opens it in the terminal. "/" focuses it. */
+function TopSearch() {
+  const quotes = useMarket((s) => s.quotes); const order = useMarket((s) => s.order); const nav = useNavigate();
+  const [q, setQ] = useState(''); const [open, setOpen] = useState(false); const [hi, setHi] = useState(0); const ref = useRef(null);
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === '/' && !/input|textarea|select/i.test(document.activeElement?.tagName || '')) { e.preventDefault(); ref.current?.focus(); } };
+    document.addEventListener('keydown', onKey); return () => document.removeEventListener('keydown', onKey);
+  }, []);
+  const res = useMemo(() => {
+    const t = q.trim().toLowerCase().replace('/', '');
+    if (!t) return [];
+    return order.map((s) => quotes[s]).filter((x) => x && (x.symbol.toLowerCase().includes(t) || (x.name || '').toLowerCase().includes(t))).slice(0, 6);
+  }, [q, quotes, order]);
+  const go = (sym) => { setQ(''); setOpen(false); ref.current?.blur(); nav(`/app/trade/${sym}`); };
+  return (
+    <div className="relative w-full max-w-[420px]">
+      <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-dim pointer-events-none" />
+      <input ref={ref} className="input !h-10 !pl-10 !pr-10 !rounded-xl !bg-panel-2" placeholder="Search markets, e.g. BTC, EUR/USD, gold" aria-label="Search markets"
+        value={q} onChange={(e) => { setQ(e.target.value); setOpen(true); setHi(0); }} onFocus={() => setOpen(true)} onBlur={() => setTimeout(() => setOpen(false), 120)}
+        onKeyDown={(e) => { if (e.key === 'ArrowDown') { e.preventDefault(); setHi((h) => Math.min(h + 1, res.length - 1)); } if (e.key === 'ArrowUp') { e.preventDefault(); setHi((h) => Math.max(h - 1, 0)); } if (e.key === 'Enter' && res[hi]) go(res[hi].symbol); if (e.key === 'Escape') { setQ(''); e.currentTarget.blur(); } }}
+        role="combobox" aria-expanded={open && res.length > 0} aria-controls="top-search-list" aria-autocomplete="list" />
+      <kbd className="hidden md:grid absolute right-3 top-1/2 -translate-y-1/2 place-items-center h-5 min-w-5 px-1 rounded-md border border-line-2 text-[10px] text-dim font-mono">/</kbd>
+      {open && res.length > 0 && (
+        <ul id="top-search-list" role="listbox" className="absolute left-0 right-0 top-12 glass glass-strong !rounded-xl p-1.5 z-50">
+          {res.map((x, i) => (
+            <li key={x.symbol} role="option" aria-selected={i === hi}>
+              <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => go(x.symbol)} onMouseEnter={() => setHi(i)}
+                className={clsx('w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-left', i === hi && 'bg-ink/[0.05]')}>
+                <span className="min-w-0"><span className="text-[13px] font-semibold block">{pairLabel(x.symbol)}</span><span className="text-[11px] text-mute block truncate">{x.name}</span></span>
+                <span className="text-right shrink-0"><span className="num text-[12.5px] block">{fmtPrice(x.price, x.decimals)}</span><span className={clsx('num text-[11px]', x.changePct >= 0 ? 'up' : 'down')}>{x.changePct >= 0 ? '+' : ''}{x.changePct?.toFixed(2)}%</span></span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** Bell: number of signal events since the member last opened the signals page. */
+function SignalBell() {
+  const tick = useMarket((s) => s.signalTick); const loc = useLocation();
+  const [seen, setSeen] = useState(tick);
+  useEffect(() => { if (loc.pathname.startsWith('/app/signals')) setSeen(tick); }, [loc.pathname, tick]);
+  const n = Math.max(0, tick - seen);
+  return (
+    <Link to="/app/signals" className="btn btn-ghost btn-icon !rounded-xl relative" aria-label={n ? `${n} new signal update${n === 1 ? '' : 's'}` : 'Signals'} title="Signals">
+      <Bell size={17} />
+      {n > 0 && <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-down text-white text-[10px] font-bold grid place-items-center num">{n > 9 ? '9+' : n}</span>}
+    </Link>
+  );
+}
+
+function UserMenu() {
+  const user = useAuth((s) => s.user); const logout = useAuth((s) => s.logout); const nav = useNavigate();
+  const [open, setOpen] = useState(false); const ref = useRef(null);
+  useEffect(() => { if (!open) return undefined; const h = (e) => { if (!ref.current?.contains(e.target)) setOpen(false); }; document.addEventListener('mousedown', h); return () => document.removeEventListener('mousedown', h); }, [open]);
+  const out = async () => { await logout(); nav('/'); toast.success('Signed out'); };
+  return (
+    <div className="relative" ref={ref}>
+      <button className="flex items-center gap-2 h-10 pl-1 pr-2 rounded-xl hover:bg-ink/[0.04]" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-haspopup="menu" aria-label="Account menu">
+        <Avatar name={user?.name} />
+        <span className="hidden md:block text-left leading-tight"><span className="text-[13px] font-semibold block max-w-[140px] truncate">{user?.name}</span><span className="text-[11px] text-mute capitalize block">{user?.role}</span></span>
+        <ChevronDown size={14} className="text-mute hidden md:block" />
+      </button>
+      {open && (
+        <div role="menu" className="absolute right-0 top-12 w-56 glass glass-strong !rounded-xl p-1.5 z-50">
+          <div className="px-3 py-2 border-b border-line mb-1"><div className="text-[13px] font-semibold truncate">{user?.name}</div><div className="text-[11px] text-mute truncate">{user?.email}</div></div>
+          {[['/app/account', 'Account and security', UserCircle], ['/app/records', 'My records', Database], ...(user?.role === 'admin' ? [['/admin', 'Admin panel', ShieldCheck]] : [])].map(([to, l, I]) => (
+            <Link key={to} role="menuitem" to={to} onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] hover:bg-ink/[0.05]"><I size={15} className="text-mute" />{l}</Link>
+          ))}
+          <button role="menuitem" onClick={out} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-down hover:bg-down/[0.07]"><LogOut size={15} />Sign out</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const BOTTOM = [
+  { to: '/app', label: 'Home', icon: LayoutDashboard, end: true },
+  { to: '/app/markets', label: 'Markets', icon: BarChart3 },
+  { to: '/app/trade', label: 'Trade', icon: CandlestickChart },
+  { to: '/app/signals', label: 'Signals', icon: Radio },
+];
+
+/** Mobile bottom navigation (thumb reach), "More" opens the full menu drawer. */
+function BottomNav({ onMore }) {
+  return (
+    <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 px-3 pb-[max(env(safe-area-inset-bottom),10px)] pt-2 pointer-events-none" aria-label="Quick navigation">
+      <div className="on-dark pointer-events-auto mx-auto max-w-md grid grid-cols-5 rounded-2xl bg-night/95 backdrop-blur-lg border border-white/10 shadow-[0_18px_40px_-12px_rgba(10,18,34,.55)] px-1.5 py-1.5">
+        {BOTTOM.map((i) => (
+          <NavLink key={i.to} to={i.to} end={i.end} className={({ isActive }) => clsx('flex flex-col items-center justify-center gap-0.5 h-12 rounded-xl text-[10.5px] font-medium transition-colors', isActive ? 'bg-white/[0.09] text-ink' : 'text-mute hover:text-ink')}>
+            {({ isActive }) => <><i.icon size={19} strokeWidth={1.8} className={isActive ? 'text-accent-2' : ''} />{i.label}</>}
+          </NavLink>
+        ))}
+        <button onClick={onMore} className="flex flex-col items-center justify-center gap-0.5 h-12 rounded-xl text-[10.5px] font-medium text-mute hover:text-ink" aria-label="Open full menu"><MoreHorizontal size={19} />More</button>
+      </div>
+    </nav>
+  );
+}
+
+function LiveState() {
+  const connected = useMarket((s) => s.connected);
+  return (
+    <span className={clsx('hidden md:inline-flex items-center gap-2 h-8 px-3 rounded-full text-[12px] font-medium border', connected ? 'border-up/25 bg-up/[0.07] text-up' : 'border-line-2 text-mute')}>
+      <span className={clsx('size-1.5 rounded-full', connected ? 'bg-up live-dot' : 'bg-warn')} />{connected ? 'Live' : 'Connecting'}
+    </span>
+  );
+}
+
 function PageFallback() {
-  return <div className="p-6 space-y-4"><Skeleton className="h-9 w-64" /><div className="grid grid-cols-2 lg:grid-cols-4 gap-4"><Skeleton className="h-24" /><Skeleton className="h-24" /><Skeleton className="h-24" /><Skeleton className="h-24" /></div><Skeleton className="h-80" /></div>;
+  return <div className="space-y-4"><Skeleton className="h-9 w-64" /><div className="grid grid-cols-2 lg:grid-cols-4 gap-4"><Skeleton className="h-24" /><Skeleton className="h-24" /><Skeleton className="h-24" /><Skeleton className="h-24" /></div><Skeleton className="h-80" /></div>;
 }
 
 function AccountNotices() {
@@ -96,14 +218,14 @@ function AccountNotices() {
   return (
     <>
       {!user.emailVerified && (
-        <div role="status" className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 border border-accent/40 bg-accent/[0.06] rounded-md px-3.5 py-2.5 text-[13px]">
+        <div role="status" className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 border border-accent/25 bg-accent-soft rounded-xl px-4 py-3 text-[13px]">
           <MailWarning size={16} className="text-accent-2 shrink-0" />
           <span className="min-w-0 flex-1">Confirm <b className="font-semibold">{user.email}</b> to open the signals desk and place paper trades. We sent you a link.</span>
           <button className="btn btn-ghost btn-sm" onClick={resend} disabled={busy || left > 0}>{left > 0 ? `Resend in ${left}s` : 'Resend email'}</button>
         </div>
       )}
       {user.role === 'admin' && !user.twoFactorEnabled && !hide2fa && (
-        <div role="status" className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 border border-line-2 rounded-md px-3.5 py-2.5 text-[13px]">
+        <div role="status" className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 border border-line bg-panel rounded-xl px-4 py-3 text-[13px] shadow-[var(--shadow-card)]">
           <ShieldAlert size={16} className="text-accent-2 shrink-0" />
           <span className="min-w-0 flex-1">Administrator accounts should use two-factor authentication.</span>
           <Link to="/app/account#security" className="btn btn-ghost btn-sm">Set up 2FA</Link>
@@ -127,7 +249,7 @@ export default function AppShell() {
       onSignalNew: (s) => toast.custom((tt) => (
         <motion.button initial={{ opacity: 0, y: -8 }} animate={{ opacity: tt.visible ? 1 : 0, y: 0 }} transition={{ duration: 0.2 }}
           onClick={() => { toast.dismiss(tt.id); nav('/app/signals'); }}
-          className="frost flex items-stretch text-left w-[min(360px,calc(100vw-2rem))] rounded-md overflow-hidden">
+          className="frost glass-strong flex items-stretch text-left w-[min(360px,calc(100vw-2rem))] rounded-xl overflow-hidden">
           <span className={clsx('w-1 shrink-0', s.direction === 'BUY' ? 'bg-up' : 'bg-down')} />
           <span className="p-3 pr-4 min-w-0">
             <span className="label !text-accent-2 block">New signal</span>
@@ -146,19 +268,26 @@ export default function AppShell() {
   useEffect(() => { setDrawer(false); window.scrollTo({ top: 0 }); }, [location.pathname]);
 
   return (
-    <div className="min-h-dvh lg:pl-[248px]">
-      <aside className="hidden lg:block fixed inset-y-0 left-0 w-[248px] rail z-40"><SidebarContent /></aside>
+    <div className="min-h-dvh lg:pl-[76px] xl:pl-[248px]">
+      <aside className="on-dark hidden lg:block fixed inset-y-0 left-0 w-[76px] xl:w-[248px] rail z-40"><SidebarContent slim /></aside>
 
-      {/* mobile header */}
-      <header className="lg:hidden sticky top-0 z-40 h-14 px-4 flex items-center justify-between frost !rounded-none !border-x-0 !border-t-0">
-        <Link to="/app"><Logo name={siteName} size={28} /></Link>
-        <button className="btn btn-ghost btn-sm btn-icon" onClick={() => setDrawer(true)} aria-label="Open menu" aria-expanded={drawer}><Menu size={18} /></button>
+      {/* top bar: search, live state, notifications, account */}
+      <header className="sticky top-0 z-40 h-16 px-4 sm:px-6 flex items-center gap-3 frost !border-x-0 !border-t-0">
+        <Link to="/app" className="lg:hidden shrink-0" aria-label={`${siteName} dashboard`}><Logo name={siteName} size={30} compact /></Link>
+        <div className="hidden sm:block flex-1 min-w-0"><TopSearch /></div>
+        <div className="sm:hidden flex-1" />
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <LiveState />
+          <SignalBell />
+          <UserMenu />
+          <button className="lg:hidden btn btn-ghost btn-icon !rounded-xl" onClick={() => setDrawer(true)} aria-label="Open menu" aria-expanded={drawer}><Menu size={18} /></button>
+        </div>
       </header>
       <AnimatePresence>
         {drawer && (
           <motion.div className="lg:hidden fixed inset-0 z-[70]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <div className="absolute inset-0 bg-black/60" onClick={() => setDrawer(false)} aria-hidden />
-            <motion.aside role="dialog" aria-label="Menu" className="absolute inset-y-0 left-0 w-[284px] max-w-[86vw] rail" initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }} transition={{ type: 'spring', stiffness: 340, damping: 34 }}>
+            <div className="absolute inset-0 bg-night/55 backdrop-blur-[2px]" onClick={() => setDrawer(false)} aria-hidden />
+            <motion.aside role="dialog" aria-label="Menu" className="on-dark absolute inset-y-0 left-0 w-[290px] max-w-[86vw] rail" initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }} transition={{ type: 'spring', stiffness: 340, damping: 34 }}>
               <button className="btn btn-ghost btn-sm btn-icon absolute right-3 top-4 z-10" onClick={() => setDrawer(false)} aria-label="Close menu"><X size={16} /></button>
               <SidebarContent onNavigate={() => setDrawer(false)} />
             </motion.aside>
@@ -166,18 +295,22 @@ export default function AppShell() {
         )}
       </AnimatePresence>
 
-      <div className="sticky top-14 lg:top-0 z-30"><TickerTape /></div>
-      <main className="px-4 sm:px-6 py-4 sm:py-6 max-w-[1680px] mx-auto">
+      <div className="sticky top-16 z-30"><TickerTape /></div>
+      <main className="px-4 sm:px-6 xl:px-8 py-5 sm:py-7 pb-28 lg:pb-8 max-w-[1600px] mx-auto">
+        <div className="sm:hidden mb-4"><TopSearch /></div>
         <AccountNotices />
+        <AdSlot slot="top" className="mb-5" />
         <AnimatePresence mode="wait" initial={false}>
-          <motion.div key={location.pathname} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
+          <motion.div key={location.pathname} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
             <Suspense fallback={<PageFallback />}>{outlet}</Suspense>
           </motion.div>
         </AnimatePresence>
       </main>
-      <footer className="px-6 pb-8 text-center text-[11px] text-dim max-w-3xl mx-auto">
-        Trading involves risk. Signals are educational and not financial advice. Paper trading uses virtual money. Crypto prices come from Binance public data when reachable; other instruments are simulated and labelled SIM.
+      <footer className="px-6 pb-28 lg:pb-8 text-center text-[11.5px] text-dim max-w-3xl mx-auto">
+        <p>Trading involves risk. Signals are educational and not financial advice. Paper trading uses virtual money. Crypto prices come from Binance public data when reachable; other instruments are simulated and labelled SIM.</p>
+        <p className="mt-2 space-x-3"><Link to="/terms" className="hover:text-ink underline underline-offset-2">Terms of Service</Link><Link to="/privacy" className="hover:text-ink underline underline-offset-2">Privacy Policy</Link><Link to="/risk" className="hover:text-ink underline underline-offset-2">Risk Disclosure</Link></p>
       </footer>
+      <BottomNav onMore={() => setDrawer(true)} />
     </div>
   );
 }

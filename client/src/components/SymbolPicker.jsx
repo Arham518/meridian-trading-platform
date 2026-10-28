@@ -36,7 +36,7 @@ export default function SymbolPicker({ value, onChange }) {
             {list.map((x) => (
               <li key={x.symbol}>
                 <button role="option" aria-selected={x.symbol === value} onClick={() => { onChange(x.symbol); setOpen(false); setQ(''); }}
-                  className={clsx('w-full flex items-center gap-2 px-2.5 py-2 rounded-[3px] text-left hover:bg-white/5', x.symbol === value && 'bg-white/[0.06]')}>
+                  className={clsx('w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-left hover:bg-ink/[0.05]', x.symbol === value && 'bg-ink/[0.06]')}>
                   {watch.includes(x.symbol) && <Star size={12} className="text-warn fill-warn shrink-0" />}
                   <span className="min-w-0 flex-1"><span className="block text-sm font-medium">{pairLabel(x.symbol)}</span><span className="block text-[11px] text-mute truncate">{x.name}</span></span>
                   <span className="text-right"><Price value={x.price} decimals={x.decimals} className="block text-[13px]" /><Change pct={x.changePct} className="text-[11px]" /></span>

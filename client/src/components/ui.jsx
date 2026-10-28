@@ -11,24 +11,24 @@ export function Card({ title, subtitle, actions, children, className = '', bodyC
   return (
     <section className={clsx('glass flex flex-col min-w-0', className)} {...rest}>
       {(title || actions) && (
-        <header className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-line min-h-[44px]">
+        <header className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b border-line min-h-[52px]">
           <div className="min-w-0">
-            <h2 className="text-[0.8125rem] font-semibold truncate">{title}</h2>
+            <h2 className="text-[0.9rem] font-semibold tracking-[-0.01em] truncate">{title}</h2>
             {subtitle && <p className="text-[11px] text-mute truncate">{subtitle}</p>}
           </div>
           {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
         </header>
       )}
-      <div className={clsx('flex-1 min-h-0', pad && 'p-4', bodyClass)}>{children}</div>
+      <div className={clsx('flex-1 min-h-0', pad && 'p-4 sm:p-5', bodyClass)}>{children}</div>
     </section>
   );
 }
 
 export function PageHeader({ title, subtitle, actions }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-3 mb-4">
+    <div className="flex flex-wrap items-end justify-between gap-3 mb-5">
       <div>
-        <h1 className="text-[1.375rem] md:text-[1.625rem] font-semibold leading-tight tracking-[-0.02em]">{title}</h1>
+        <h1 className="text-[1.6rem] md:text-[2rem] font-semibold leading-tight tracking-[-0.035em]">{title}</h1>
         {subtitle && <p className="text-sm text-mute mt-1 max-w-2xl">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
@@ -39,7 +39,7 @@ export function PageHeader({ title, subtitle, actions }) {
 export function EmptyState({ title = 'Nothing here yet', hint, icon: Icon = Inbox, action }) {
   return (
     <div className="flex flex-col items-center justify-center text-center py-12 px-6 gap-2">
-      <div className="size-9 rounded-md border border-line-2 grid place-items-center text-mute"><Icon size={17} /></div>
+      <div className="size-10 rounded-xl bg-accent-soft grid place-items-center text-accent-2"><Icon size={18} /></div>
       <p className="font-medium mt-1">{title}</p>
       {hint && <p className="text-sm text-mute max-w-sm">{hint}</p>}
       {action}
@@ -64,11 +64,11 @@ export const RiskBadge = ({ risk }) => <span className={clsx('badge', risk === '
 export const SimTag = ({ title = 'Simulated market data' }) => <span title={title} className="badge badge-warn !h-[18px] !text-[10px]">SIM</span>;
 
 /** One cell of a stat strip (parent has the .stats class: hairline-separated cells, no boxes). */
-export function StatCard({ label, value, sub, tone, loading }) {
+export function StatCard({ label, value, sub, tone, loading, icon: Icon }) {
   return (
-    <div className="bg-panel px-4 py-3 min-w-0">
-      <span className="label block truncate">{label}</span>
-      {loading ? <Skeleton className="h-6 w-24 mt-2" /> : <div className={clsx('num text-[1.25rem] sm:text-[1.5rem] font-medium mt-1 leading-tight truncate', tone)}>{value}</div>}
+    <div className="glass px-4 sm:px-5 py-4 min-w-0">
+      <div className="flex items-center justify-between gap-2"><span className="text-[12px] font-medium text-mute truncate">{label}</span>{Icon && <span className="size-7 rounded-lg grid place-items-center bg-accent-soft text-accent-2 shrink-0"><Icon size={14} /></span>}</div>
+      {loading ? <Skeleton className="h-7 w-24 mt-2" /> : <div className={clsx('num text-[1.35rem] sm:text-[1.6rem] font-semibold tracking-[-0.03em] mt-1.5 leading-tight truncate', tone)}>{value}</div>}
       {sub && <div className="text-[11px] text-mute mt-1 truncate">{sub}</div>}
     </div>
   );
@@ -88,9 +88,9 @@ export function Modal({ open, onClose, title, children, footer, width = 'max-w-l
     <AnimatePresence>
       {open && (
         <motion.div className="fixed inset-0 z-[80] grid place-items-end sm:place-items-center p-0 sm:p-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.15 }}>
-          <div className="absolute inset-0 bg-black/60" onClick={onClose} aria-hidden />
+          <div className="absolute inset-0 bg-night/55 backdrop-blur-[2px]" onClick={onClose} aria-hidden />
           <motion.div ref={ref} role="dialog" aria-modal="true" aria-label={title}
-            className={clsx('glass glass-strong relative w-full max-h-[92dvh] flex flex-col rounded-b-none sm:rounded-b-[8px]', width)}
+            className={clsx('glass glass-strong relative w-full max-h-[92dvh] flex flex-col rounded-b-none sm:rounded-b-[16px]', width)}
             initial={{ y: 14, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 10, opacity: 0 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
             <header className="flex items-center justify-between px-5 py-4 border-b border-line">
               <h2 className="font-semibold">{title}</h2>
@@ -132,7 +132,7 @@ export function Field({ label, hint, error, children, className = '' }) {
 
 export function Segmented({ options, value, onChange, size = 'md', ariaLabel }) {
   return (
-    <div role="tablist" aria-label={ariaLabel} className="inline-flex gap-0.5 p-0.5 rounded-md bg-bg border border-line">
+    <div role="tablist" aria-label={ariaLabel} className="inline-flex gap-0.5 p-[3px] rounded-[10px] bg-ink/[0.05] border border-line">
       {options.map((o) => (
         <button key={o.value} type="button" role="tab" aria-selected={value === o.value} onClick={() => onChange(o.value)}
           className={clsx('tab', size === 'sm' && '!h-7 !px-2.5 !text-xs')}>{o.label}</button>

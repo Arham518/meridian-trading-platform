@@ -20,7 +20,7 @@ const Row = memo(function Row({ symbol, active, onSelect, onRemove, spark }) {
   const q = useMarket((s) => s.quotes[symbol]);
   if (!q) return null;
   return (
-    <li className={clsx('group flex items-center gap-2 px-3 py-2 border-b border-line last:border-0 cursor-pointer transition-colors hover:bg-white/[0.03]', active && 'bg-white/[0.05] shadow-[inset_2px_0_0_var(--color-accent)]')} onClick={() => onSelect?.(symbol)}>
+    <li className={clsx('group flex items-center gap-2 px-3 py-2 border-b border-line last:border-0 cursor-pointer transition-colors hover:bg-ink/[0.03]', active && 'bg-ink/[0.05] shadow-[inset_2px_0_0_var(--color-accent)]')} onClick={() => onSelect?.(symbol)}>
       <button className="p-1 -ml-1 text-accent" onClick={(e) => { e.stopPropagation(); onRemove(symbol); }} aria-label={`Remove ${symbol} from watchlist`} title="Remove from watchlist"><Star size={13} className="fill-accent" /></button>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5 text-sm font-medium">{pairLabel(symbol)}{q.source === 'simulated' && <SimTag />}</div>
@@ -54,7 +54,7 @@ export default function Watchlist({ activeSymbol, onSelect, max }) {
         </div>
       )}
       {!adding && addable.length > 0 && (
-        <button className="w-full flex items-center gap-2 px-4 py-2.5 text-[12px] text-mute hover:text-ink hover:bg-white/[0.03] border-b border-line" onClick={() => setAdding(true)}><Plus size={13} />Add symbol</button>
+        <button className="w-full flex items-center gap-2 px-4 py-2.5 text-[12px] text-mute hover:text-ink hover:bg-ink/[0.03] border-b border-line" onClick={() => setAdding(true)}><Plus size={13} />Add symbol</button>
       )}
       {shown.length === 0 ? <EmptyState title="Your watchlist is empty" hint="Add symbols to track them here. Saved to your account." icon={Star} /> : (
         <ul>{shown.map((s) => <Row key={s} symbol={s} active={s === activeSymbol} onSelect={onSelect} onRemove={remove} spark={spark[s]} />)}</ul>

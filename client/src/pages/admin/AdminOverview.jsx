@@ -8,8 +8,9 @@ import { useFetch } from '../../lib/hooks.js';
 import { api } from '../../lib/api.js';
 import { useMarket } from '../../store/market.js';
 import { fmtDate, fmtSigned, fmtPct, timeAgo } from '../../lib/format.js';
+import { C } from '../../lib/theme.js';
 
-const SMETA = { active: ['Active', '#d9a441'], hit_tp1: ['TP1 hit', '#2fbf85'], hit_tp2: ['TP2 hit', '#2fbf85'], hit_sl: ['Stopped out', '#ec5560'], cancelled: ['Cancelled', '#6f6d65'] };
+const SMETA = { active: ['Active', C.accent], hit_tp1: ['TP1 hit', C.candleUp], hit_tp2: ['TP2 hit', C.candleUp], hit_sl: ['Stopped out', C.candleDown], cancelled: ['Cancelled', C.neutral] };
 
 export default function AdminOverview() {
   const tick = useMarket((s) => s.signalTick);
@@ -36,20 +37,20 @@ export default function AdminOverview() {
         <Card title="New sign-ups" subtitle="Last 14 days">
           {!d ? <Skeleton className="h-40" /> : (
             <div className="flex items-end gap-1 h-40" role="img" aria-label="Sign-ups per day">
-              {days.map((s) => <div key={s.d} className="flex-1 flex flex-col items-center justify-end gap-1 h-full" title={`${s.d}: ${s.n}`}><span className="num text-[10px] text-mute h-3">{s.n || ''}</span><div className={`w-full rounded-t-[2px] ${s.n ? 'bg-accent' : 'bg-white/[0.07]'}`} style={{ height: `${s.n ? (s.n / max) * 72 : 3}%`, minHeight: 3 }} /><span className="text-[9px] text-dim">{s.d.slice(8)}</span></div>)}
+              {days.map((s) => <div key={s.d} className="flex-1 flex flex-col items-center justify-end gap-1 h-full" title={`${s.d}: ${s.n}`}><span className="num text-[10px] text-mute h-3">{s.n || ''}</span><div className={`w-full rounded-t-[2px] ${s.n ? 'bg-accent' : 'bg-ink/[0.07]'}`} style={{ height: `${s.n ? (s.n / max) * 72 : 3}%`, minHeight: 3 }} /><span className="text-[9px] text-dim">{s.d.slice(8)}</span></div>)}
             </div>
           )}
         </Card>
         <Card title="Signals by status">
           {!d ? <Skeleton className="h-40" /> : (
-            <div className="space-y-3">{d.byStatus.map((s) => { const [l, c] = SMETA[s.status] || [s.status, '#6f6d65']; return (
-              <div key={s.status}><div className="flex justify-between text-sm mb-1"><span>{l}</span><span className="num text-mute">{s.n}</span></div><div className="h-[5px] rounded-[1px] bg-white/[0.06] overflow-hidden"><div className="h-full transition-all" style={{ width: `${(s.n / totalSig) * 100}%`, background: c }} /></div></div>); })}
+            <div className="space-y-3">{d.byStatus.map((s) => { const [l, c] = SMETA[s.status] || [s.status, C.neutral]; return (
+              <div key={s.status}><div className="flex justify-between text-sm mb-1"><span>{l}</span><span className="num text-mute">{s.n}</span></div><div className="h-[5px] rounded-[1px] bg-ink/[0.06] overflow-hidden"><div className="h-full transition-all" style={{ width: `${(s.n / totalSig) * 100}%`, background: c }} /></div></div>); })}
               <p className="text-xs text-mute pt-1">Average result per closed signal: <b className="num text-ink">{fmtPct(d.signals.avgResult)}</b></p></div>
           )}
         </Card>
         <Card title="Master Excel workbook" subtitle="server/data/records.xlsx · auto-updated on every change">
           <div className="flex items-start gap-3">
-            <div className="size-10 rounded-[3px] border border-line-2 grid place-items-center text-mute shrink-0"><FileSpreadsheet size={20} /></div>
+            <div className="size-10 rounded-lg border border-line-2 grid place-items-center text-mute shrink-0"><FileSpreadsheet size={20} /></div>
             <div className="text-sm min-w-0">
               {m ? <><p className="text-mute">Last updated <b className="text-ink">{m.modified ? timeAgo(m.modified) : '—'}</b></p><p className="text-mute">Size <b className="num text-ink">{m.size ? `${(m.size / 1024).toFixed(1)} KB` : '—'}</b></p>{m.pending && <p className="text-warn text-xs mt-1">Update in progress…</p>}{m.lastError && <p className="text-down text-xs mt-1">{m.lastError}</p>}</> : <Skeleton className="h-10 w-40" />}
             </div>

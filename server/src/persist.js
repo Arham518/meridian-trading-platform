@@ -34,6 +34,8 @@ let pendingOps = 0;
 let queue = Promise.resolve();
 let changesSinceSnapshot = 0;
 let lastError = null;
+let lastErrorAt = null;
+let lastSavedAt = null;
 const knownFiles = new Map(); // name -> "size:mtimeMs"
 
 async function getPool() {
@@ -60,8 +62,8 @@ function enqueue(label, op) {
   pendingOps++;
   queue = queue.then(async () => {
     for (let attempt = 0; ; attempt++) {
-      try { await op(); lastError = null; break; } catch (e) {
-        lastError = `${label}: ${e.message}`;
+      try { await op(); lastError = null; lastErrorAt = null; lastSavedAt = new Date().toISOString(); break; } catch (e) {
+        lastError = `${label}: ${e.message}`; lastErrorAt = new Date().toISOString();
         console.error(`[persist] ${label} failed (attempt ${attempt + 1}):`, e.message);
         await sleep(Math.min(15000, 500 * 2 ** attempt));
       }
@@ -216,7 +218,7 @@ export function flush() {
 }
 
 export const pending = () => enabled && !!db && (dirty || pendingOps > 0);
-export const status = () => ({ enabled, pendingOps, lastError });
+export const status = () => ({ enabled, pendingOps, lastError, lastErrorAt, lastSavedAt });
 
 /** Express middleware: delays res.end() until the request's changes are stored. */
 export function holdResponseUntilSaved(req, res, next) {

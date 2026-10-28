@@ -36,7 +36,7 @@ export function Login() {
         <form onSubmit={submit2} className="space-y-4" noValidate>
           <Field label="Authentication code"><input className="input num !h-11 !text-lg tracking-[0.25em]" inputMode="numeric" autoComplete="one-time-code" autoFocus value={code} onChange={(e) => setCode(e.target.value)} placeholder="000000" maxLength={11} /></Field>
           <FormError>{err}</FormError>
-          <button className="btn btn-primary w-full !h-10" disabled={busy || code.trim().length < 6}>{busy ? <Spinner /> : 'Verify and sign in'}</button>
+          <button className="btn btn-primary w-full !h-11" disabled={busy || code.trim().length < 6}>{busy ? <Spinner /> : 'Verify and sign in'}</button>
         </form>
       </AuthLayout>
     );
@@ -48,9 +48,9 @@ export function Login() {
         <Field label={<span className="flex justify-between normal-case tracking-normal"><span className="label">Password</span><Link to="/forgot-password" className="text-[12px] text-mute hover:text-ink" tabIndex={-1}>Forgot password?</Link></span>}>
           <PasswordField value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} autoComplete="current-password" />
         </Field>
-        <label className="flex items-center gap-2 text-[13px] text-mute cursor-pointer select-none"><input type="checkbox" className="accent-[#d9a441] size-3.5" checked={f.remember} onChange={(e) => setF({ ...f, remember: e.target.checked })} />Keep me signed in for 30 days</label>
+        <label className="flex items-center gap-2 text-[13px] text-mute cursor-pointer select-none"><input type="checkbox" className="accent-[#1d5fe0] size-3.5" checked={f.remember} onChange={(e) => setF({ ...f, remember: e.target.checked })} />Keep me signed in for 30 days</label>
         <FormError>{locked > 0 ? `Too many failed attempts. Try again in ${locked >= 90 ? `${Math.ceil(locked / 60)} minutes` : `${locked}s`}.` : err}</FormError>
-        <button className="btn btn-primary w-full !h-10" disabled={busy || locked > 0 || !f.identifier || !f.password}>{busy ? <Spinner /> : 'Sign in'}</button>
+        <button className="btn btn-primary w-full !h-11" disabled={busy || locked > 0 || !f.identifier || !f.password}>{busy ? <Spinner /> : 'Sign in'}</button>
       </form>
     </AuthLayout>
   );
@@ -59,7 +59,7 @@ export function Login() {
 /* ---------------------------------------------------------------- Register */
 export function Register() {
   const { user, register } = useAuth(); const nav = useNavigate();
-  const [f, setF] = useState({ name: '', username: '', email: '', password: '', confirmPassword: '' });
+  const [f, setF] = useState({ name: '', username: '', email: '', password: '', confirmPassword: '', acceptTerms: false });
   const [busy, setBusy] = useState(false); const [err, setErr] = useState(''); const [fe, setFe] = useState({}); const [touched, setTouched] = useState(false);
   if (user) return <Navigate to="/app" replace />;
   const set = (k) => (e) => setF((p) => ({ ...p, [k]: e.target.value }));
@@ -68,6 +68,7 @@ export function Register() {
     e.preventDefault(); setErr(''); setFe({}); setTouched(true);
     if (!passwordOk(f.password)) return setErr('Choose a stronger password. See the rules below the field.');
     if (f.password !== f.confirmPassword) return setFe({ confirmPassword: 'Passwords do not match' });
+    if (!f.acceptTerms) return setFe({ acceptTerms: 'Please agree to the Terms of Service and Privacy Policy to continue.' });
     setBusy(true);
     try { await register({ ...f, username: f.username || undefined }); toast.success('Account created. Check your inbox to confirm your email.'); nav('/app', { replace: true }); }
     catch (e2) { setErr(Object.keys(fieldErrors(e2)).length ? '' : e2.message); setFe(fieldErrors(e2)); if (e2.status === 409) setFe(e2.message.includes('username') ? { username: e2.message } : { email: e2.message }); } finally { setBusy(false); }
@@ -86,8 +87,15 @@ export function Register() {
         </div>
         <Field label="Confirm password" error={fe.confirmPassword || (mismatch ? 'Passwords do not match' : '')}><PasswordField value={f.confirmPassword} onChange={set('confirmPassword')} autoComplete="new-password" placeholder="Repeat password" invalid={!!mismatch} /></Field>
         <FormError>{err}</FormError>
-        <button className="btn btn-primary w-full !h-10" disabled={busy || !f.name || !f.email || !f.password || !f.confirmPassword}>{busy ? <Spinner /> : 'Create account'}</button>
-        <p className="text-[11px] text-dim">By registering you accept that signals are educational and that trading involves risk.</p>
+        <div>
+          <label className="flex items-start gap-2.5 text-[13px] text-mute cursor-pointer select-none">
+            <input type="checkbox" className="accent-[#1d5fe0] size-4 mt-0.5 shrink-0" checked={f.acceptTerms} onChange={(e) => { setF((p) => ({ ...p, acceptTerms: e.target.checked })); setFe((x) => ({ ...x, acceptTerms: undefined })); }} aria-invalid={fe.acceptTerms ? 'true' : undefined} data-testid="accept-terms" required />
+            <span>I agree to the <Link to="/terms" target="_blank" className="link">Terms of Service</Link> and <Link to="/privacy" target="_blank" className="link">Privacy Policy</Link>, and I have read the <Link to="/risk" target="_blank" className="link">Risk Disclosure</Link>.</span>
+          </label>
+          {fe.acceptTerms && <span className="text-xs text-down mt-1.5 block" role="alert">{fe.acceptTerms}</span>}
+        </div>
+        <button className="btn btn-primary w-full !h-11" disabled={busy || !f.name || !f.email || !f.password || !f.confirmPassword || !f.acceptTerms}>{busy ? <Spinner /> : 'Create account'}</button>
+        <p className="text-[11px] text-dim">Signals are educational and trading involves risk. Paper trading uses virtual money.</p>
       </form>
     </AuthLayout>
   );
@@ -111,7 +119,7 @@ export function ForgotPassword() {
         <form onSubmit={submit} className="space-y-4" noValidate>
           <Field label="Email"><input className="input" type="email" autoComplete="email" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required /></Field>
           <FormError>{err}</FormError>
-          <button className="btn btn-primary w-full !h-10" disabled={busy || !email}>{busy ? <Spinner /> : 'Send reset link'}</button>
+          <button className="btn btn-primary w-full !h-11" disabled={busy || !email}>{busy ? <Spinner /> : 'Send reset link'}</button>
         </form>
       )}
     </AuthLayout>
@@ -132,7 +140,7 @@ export function ResetPassword() {
   };
   if (dead) return (
     <AuthLayout title="Link expired" subtitle="This reset link is invalid, expired or was already used. Reset links work once and last 60 minutes." footer={<Link to="/login" className="link">Back to sign in</Link>}>
-      <Link to="/forgot-password" className="btn btn-primary w-full !h-10">Request a new link</Link>
+      <Link to="/forgot-password" className="btn btn-primary w-full !h-11">Request a new link</Link>
     </AuthLayout>
   );
   return (
@@ -142,7 +150,7 @@ export function ResetPassword() {
           <div><Field label="New password"><PasswordField value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} autoComplete="new-password" autoFocus /></Field><PasswordRules value={f.password} /></div>
           <Field label="Confirm new password" error={mismatch ? 'Passwords do not match' : ''}><PasswordField value={f.confirmPassword} onChange={(e) => setF({ ...f, confirmPassword: e.target.value })} autoComplete="new-password" placeholder="Repeat password" invalid={!!mismatch} /></Field>
           <FormError>{err}</FormError>
-          <button className="btn btn-primary w-full !h-10" disabled={busy || !f.password || !f.confirmPassword}>{busy ? <Spinner /> : 'Update password'}</button>
+          <button className="btn btn-primary w-full !h-11" disabled={busy || !f.password || !f.confirmPassword}>{busy ? <Spinner /> : 'Update password'}</button>
         </form>
       )}
     </AuthLayout>
@@ -171,8 +179,8 @@ function TokenResult({ endpoint, okTitle, okText, failTitle, resend }) {
           {state === 'fail' && <MailX className="text-down" size={20} />}
           <span className="text-sm">{state === 'ok' ? 'Done.' : state === 'working' ? 'Working...' : 'The link could not be used.'}</span>
         </div>
-        {state === 'ok' && <Link to={user ? '/app' : '/login'} className="btn btn-primary w-full !h-10">{user ? 'Continue to dashboard' : 'Sign in'}</Link>}
-        {state === 'fail' && resend && <Link to="/resend-verification" className="btn btn-primary w-full !h-10">Send a new link</Link>}
+        {state === 'ok' && <Link to={user ? '/app' : '/login'} className="btn btn-primary w-full !h-11">{user ? 'Continue to dashboard' : 'Sign in'}</Link>}
+        {state === 'fail' && resend && <Link to="/resend-verification" className="btn btn-primary w-full !h-11">Send a new link</Link>}
         {state === 'fail' && !resend && <Link to={user ? '/app/account' : '/login'} className="btn btn-ghost w-full !h-10">{user ? 'Back to account' : 'Sign in'}</Link>}
       </div>
     </AuthLayout>
@@ -197,7 +205,7 @@ export function ResendVerification() {
         <Field label="Email"><input className="input" type="email" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required /></Field>
         {sent && <FormNote tone="ok">If that address belongs to an unconfirmed account, a link is on its way.</FormNote>}
         <FormError>{err}</FormError>
-        <button className="btn btn-primary w-full !h-10" disabled={busy || left > 0 || !email}>{busy ? <Spinner /> : left > 0 ? `Resend in ${left}s` : 'Send link'}</button>
+        <button className="btn btn-primary w-full !h-11" disabled={busy || left > 0 || !email}>{busy ? <Spinner /> : left > 0 ? `Resend in ${left}s` : 'Send link'}</button>
       </form>
     </AuthLayout>
   );

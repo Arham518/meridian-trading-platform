@@ -120,6 +120,7 @@ addCol('users', 'totp_enabled', 'INTEGER NOT NULL DEFAULT 0');
 addCol('users', 'totp_last_step', 'INTEGER NOT NULL DEFAULT 0');
 addCol('users', 'pending_email', 'TEXT');
 addCol('users', 'force_reset', 'INTEGER NOT NULL DEFAULT 0');
+addCol('users', 'terms_accepted_at', 'TEXT'); // when the member ticked "I agree to the Terms and Privacy Policy" at sign-up
 db.exec(`
 CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username COLLATE NOCASE) WHERE username IS NOT NULL;
 CREATE TABLE IF NOT EXISTS sessions (
@@ -180,6 +181,15 @@ const defaults = {
 };
 const ins = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
 for (const [k, v] of Object.entries(defaults)) ins.run(k, v);
+
+// One-time data fixes, each recorded in settings so it runs only once per database.
+const once = (key, fn) => {
+  if (db.prepare('SELECT 1 FROM settings WHERE key = ?').get(key)) return;
+  fn();
+  db.prepare('INSERT INTO settings (key, value) VALUES (?, ?)').run(key, new Date().toISOString());
+};
+// The live site name was saved with a typo. Fix exactly that value; any other custom name is left alone.
+once('migration_site_name_typo', () => db.prepare("UPDATE settings SET value = 'Meridian' WHERE key = 'site_name' AND value = 'Meditaian'").run());
 
 // Hosted mode: save a fresh full copy (it already contains the migrations above) and start recording changes.
 if (persist.enabled) await persist.attach(db, { uploadDir: config.uploadDir, dbPath: config.dbPath });

@@ -72,10 +72,10 @@ export default function SignalForm({ open, signal, onClose, onSaved }) {
         <Field label="Chart image (optional)" hint="PNG, JPEG or WebP, up to 3 MB">
           <div className="flex items-center gap-3">
             <label className="btn btn-ghost cursor-pointer"><ImagePlus size={15} />{preview && !removeImg ? 'Replace image' : 'Upload image'}<input type="file" className="sr-only" accept="image/png,image/jpeg,image/webp" onChange={onFile} /></label>
-            {preview && !removeImg && <><img src={preview} alt="Chart preview" className="h-12 w-20 object-cover rounded-[3px] border border-line" /><button type="button" className="btn btn-danger btn-sm btn-icon" onClick={() => { setRemoveImg(true); setFile(null); setPreview(null); }} aria-label="Remove image"><Trash2 size={14} /></button></>}
+            {preview && !removeImg && <><img src={preview} alt="Chart preview" className="h-12 w-20 object-cover rounded-lg border border-line" /><button type="button" className="btn btn-danger btn-sm btn-icon" onClick={() => { setRemoveImg(true); setFile(null); setPreview(null); }} aria-label="Remove image"><Trash2 size={14} /></button></>}
           </div>
         </Field>
-        {err && <p role="alert" className="text-sm text-down bg-down/10 border border-down/25 rounded-[3px] px-3 py-2">{err}</p>}
+        {err && <p role="alert" className="text-sm text-down bg-down/10 border border-down/25 rounded-lg px-3 py-2">{err}</p>}
       </form>
     </Modal>
   );

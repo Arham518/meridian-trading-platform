@@ -44,7 +44,7 @@ export default function OrderPanel({ symbol, balance, onPlaced }) {
       <div className="grid grid-cols-2 gap-1 p-1 rounded-md bg-bg border border-line" role="tablist" aria-label="Order side">
         {['BUY', 'SELL'].map((s) => (
           <button key={s} type="button" role="tab" aria-selected={side === s} onClick={() => setSide(s)}
-            className={clsx('h-8 rounded-[3px] text-[13px] font-semibold transition-colors', side === s ? (s === 'BUY' ? 'bg-up text-[#04150e]' : 'bg-down text-[#1a0507]') : 'text-mute hover:text-ink')}>{s === 'BUY' ? 'Buy / Long' : 'Sell / Short'}</button>
+            className={clsx('h-8 rounded-lg text-[13px] font-semibold transition-colors', side === s ? (s === 'BUY' ? 'bg-up text-white' : 'bg-down text-white') : 'text-mute hover:text-ink')}>{s === 'BUY' ? 'Buy / Long' : 'Sell / Short'}</button>
         ))}
       </div>
       <div className="flex items-center justify-between">
@@ -66,7 +66,7 @@ export default function OrderPanel({ symbol, balance, onPlaced }) {
         <div className="flex justify-between"><dt className="text-mute">Order value</dt><dd className="num">{fmtMoney(notional)}</dd></div>
         <div className="flex justify-between"><dt className="text-mute">Available (paper)</dt><dd className="num">{fmtMoney(balance)}</dd></div>
       </dl>
-      {(err || lvlErr) && <p role="alert" className="text-xs text-down bg-down/10 border border-down/25 rounded-[3px] px-3 py-2">{err || lvlErr}</p>}
+      {(err || lvlErr) && <p role="alert" className="text-xs text-down bg-down/10 border border-down/25 rounded-lg px-3 py-2">{err || lvlErr}</p>}
       <button className={clsx('btn w-full !h-11 text-[0.9375rem]', side === 'BUY' ? 'btn-up' : 'btn-down')} disabled={busy || !q}>
         {busy ? <Spinner /> : `${side === 'BUY' ? 'Buy' : 'Sell'} ${pairLabel(symbol)}`}
       </button>

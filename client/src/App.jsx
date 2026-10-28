@@ -5,7 +5,7 @@ import { useAuth } from './store/auth.js';
 import { useSettings } from './store/settings.js';
 import AppShell from './components/AppShell.jsx';
 import { Spinner } from './components/ui.jsx';
-import { LogoMark } from './components/Logo.jsx';
+import { LogoTile } from './components/Logo.jsx';
 
 // every route is code-split
 const Landing = lazy(() => import('./pages/Landing.jsx'));
@@ -16,6 +16,7 @@ const ResetPassword = lazy(() => import('./pages/Auth.jsx').then((m) => ({ defau
 const VerifyEmail = lazy(() => import('./pages/Auth.jsx').then((m) => ({ default: m.VerifyEmail })));
 const ConfirmEmailChange = lazy(() => import('./pages/Auth.jsx').then((m) => ({ default: m.ConfirmEmailChange })));
 const ResendVerification = lazy(() => import('./pages/Auth.jsx').then((m) => ({ default: m.ResendVerification })));
+const Legal = lazy(() => import('./pages/Legal.jsx'));
 const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
 const Markets = lazy(() => import('./pages/Markets.jsx'));
 const Trade = lazy(() => import('./pages/Trade.jsx'));
@@ -30,7 +31,7 @@ const AdminRecords = lazy(() => import('./pages/admin/AdminRecords.jsx'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings.jsx'));
 const AdminEmail = lazy(() => import('./pages/admin/AdminEmail.jsx'));
 
-const Splash = () => <div className="min-h-dvh grid place-items-center"><div className="flex flex-col items-center gap-4"><LogoMark size={40} /><Spinner className="text-mute" /></div></div>;
+const Splash = () => <div className="min-h-dvh grid place-items-center"><div className="flex flex-col items-center gap-4"><LogoTile size={44} /><Spinner className="text-mute" /></div></div>;
 
 function Protected({ admin, children }) {
   const { user, ready } = useAuth(); const loc = useLocation();
@@ -63,6 +64,9 @@ export default function App() {
           <Route path="/verify-email" element={ready ? <VerifyEmail /> : <Splash />} />
           <Route path="/confirm-email" element={ready ? <ConfirmEmailChange /> : <Splash />} />
           <Route path="/resend-verification" element={ready ? <ResendVerification /> : <Splash />} />
+          <Route path="/terms" element={<Legal doc="terms" />} />
+          <Route path="/privacy" element={<Legal doc="privacy" />} />
+          <Route path="/risk" element={<Legal doc="risk" />} />
           <Route element={<Protected><AppShell /></Protected>}>
             <Route path="/app" element={<Dashboard />} />
             <Route path="/app/markets" element={<Markets />} />
@@ -86,8 +90,8 @@ export default function App() {
       </Suspense>
       <Toaster position="top-right" gutter={10} toastOptions={{
         duration: 3500,
-        style: { background: 'rgba(22,22,21,0.82)', color: '#ecebe6', border: '1px solid rgba(236,232,220,0.14)', backdropFilter: 'blur(14px)', fontSize: '0.875rem', borderRadius: '6px' },
-        success: { iconTheme: { primary: '#2fbf85', secondary: '#07090d' } }, error: { iconTheme: { primary: '#ec5560', secondary: '#07090d' } },
+        style: { background: 'rgba(255,255,255,0.92)', color: '#0d1526', border: '1px solid rgba(13,21,38,0.10)', backdropFilter: 'blur(14px)', fontSize: '0.875rem', borderRadius: '12px', boxShadow: '0 12px 32px -12px rgba(13,21,38,0.28)' },
+        success: { iconTheme: { primary: '#0a7444', secondary: '#ffffff' } }, error: { iconTheme: { primary: '#c8293b', secondary: '#ffffff' } },
       }} />
     </>
   );

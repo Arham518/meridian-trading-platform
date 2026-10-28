@@ -55,7 +55,7 @@ test('hosted mode: users, signals, trades, settings and uploads survive restarts
 
   // ---- run 1: create data, then stop normally
   let s = await start(env);
-  const reg = await s.api('POST', '/api/auth/register', { body: { name: 'Persist User', email: 'p@test.local', password: 'Persist#2026a', confirmPassword: 'Persist#2026a' } });
+  const reg = await s.api('POST', '/api/auth/register', { body: { name: 'Persist User', email: 'p@test.local', password: 'Persist#2026a', confirmPassword: 'Persist#2026a', acceptTerms: true } });
   assert.ok([200, 201].includes(reg.status), JSON.stringify(reg.body));
   let admin = await s.login(ADMIN.email, ADMIN.password);
   assert.ok(admin, 'admin login');
