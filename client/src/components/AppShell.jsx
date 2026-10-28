@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { NavLink, Link, useLocation, useNavigate, useOutlet } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { LayoutDashboard, BarChart3, CandlestickChart, Radio, History, Database, UserCircle, ShieldCheck, Megaphone, Users, FileSpreadsheet, Settings, LogOut, Menu, X, ArrowUpRight, ArrowDownRight, MailWarning, ShieldAlert, CircleCheck, CircleX, Target, Download, Mail, Search, Bell, ChevronDown, LineChart, MoreHorizontal } from 'lucide-react';
+import { LayoutDashboard, BarChart3, CandlestickChart, Radio, History, Database, UserCircle, ShieldCheck, Megaphone, Users, FileSpreadsheet, Settings, LogOut, Menu, X, ArrowUpRight, ArrowDownRight, MailWarning, ShieldAlert, CircleCheck, CircleX, Target, Download, Mail, Search, Bell, ChevronDown, LineChart, MoreHorizontal, ChevronLeft, ChevronRight, PanelLeftClose, PanelLeftOpen, ArrowLeft, Home } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import Logo, { LogoTile } from './Logo.jsx';
@@ -38,57 +38,75 @@ const ADMIN_NAV = [
   { to: '/admin/settings', label: 'Site settings', icon: Settings },
 ];
 
+/** Sidebar width modes, remembered per browser: 'open' (icons + labels), 'mini' (icons only), 'hidden'. */
+const RAIL_KEY = 'meridian_rail';
+export function useRail() {
+  const [mode, setMode] = useState(() => {
+    try { const v = localStorage.getItem(RAIL_KEY); if (v === 'open' || v === 'mini' || v === 'hidden') return v; } catch { /* private mode */ }
+    return typeof window !== 'undefined' && window.innerWidth < 1280 ? 'mini' : 'open';
+  });
+  const set = (m) => { setMode(m); try { localStorage.setItem(RAIL_KEY, m); } catch { /* ignore */ } };
+  return [mode, set];
+}
+
 function NavItem({ item, onClick, slim }) {
   return (
-    <NavLink to={item.to} end={item.end} onClick={onClick} title={slim ? item.label : undefined}
-      className={({ isActive }) => clsx('group relative flex items-center gap-3 h-10 rounded-xl text-[0.84rem] font-medium transition-colors',
-        slim ? 'px-3 xl:px-3.5 justify-center xl:justify-start' : 'px-3.5',
-        isActive ? 'bg-white/[0.08] text-ink' : 'text-mute hover:text-ink hover:bg-white/[0.04]')}>
-      {({ isActive }) => (<>
-        {isActive && <motion.span layoutId={slim ? 'nav-active' : 'nav-active-m'} className="absolute left-0 top-2 bottom-2 w-[3px] rounded-r bg-accent-2" />}
-        <item.icon size={18} strokeWidth={1.8} className={clsx('shrink-0', isActive ? 'text-accent-2' : '')} />
-        <span className={clsx(slim && 'hidden xl:inline', 'truncate')}>{item.label}</span>
-      </>)}
+    <NavLink to={item.to} end={item.end} onClick={onClick} title={slim ? item.label : undefined} aria-label={slim ? item.label : undefined}
+      className={({ isActive }) => clsx('rail-item flex items-center gap-3 h-11 text-[0.85rem] font-medium', slim ? 'w-11 justify-center mx-auto' : 'px-4', isActive && 'is-active')}>
+      <item.icon size={18} strokeWidth={1.9} className="shrink-0" />
+      {!slim && <span className="truncate">{item.label}</span>}
     </NavLink>
   );
 }
 
-function SidebarContent({ onNavigate, slim = false }) {
+function SidebarContent({ onNavigate, slim = false, onToggle, admin = false }) {
   const user = useAuth((s) => s.user); const logout = useAuth((s) => s.logout); const nav = useNavigate();
   const siteName = useSettings((s) => s.siteName);
   const connected = useMarket((s) => s.connected); const status = useMarket((s) => s.status);
   const out = async () => { await logout(); nav('/'); toast.success('Signed out'); };
-  const group = (t, extra) => <div className={clsx('label px-3.5 mb-2 !text-dim', slim && 'hidden xl:block', extra)}>{t}</div>;
+  const group = (t, extra) => (slim ? <div className="mx-auto my-2 w-6 border-t border-white/15" aria-hidden /> : <div className={clsx('px-4 mb-2 text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[#a9b9d3]', extra)}>{t}</div>);
+  const adminBlock = user?.role === 'admin' && <div>{group(admin ? 'Admin panel' : 'Administration', '!text-[#bcd5ff]')}<div className="space-y-1.5">{ADMIN_NAV.map((i) => <NavItem key={i.to} item={i} onClick={onNavigate} slim={slim} />)}</div></div>;
   return (
-    <div className="flex flex-col h-full">
-      <div className={clsx('h-16 flex items-center shrink-0', slim ? 'px-4 justify-center xl:justify-start xl:px-5' : 'px-5')}>
-        <Link to="/app" onClick={onNavigate} aria-label={`${siteName} dashboard`}>{slim ? <><span className="xl:hidden"><LogoTile size={34} /></span><span className="hidden xl:inline-flex"><Logo name={siteName} /></span></> : <Logo name={siteName} />}</Link>
+    <div className="flex flex-col h-full text-white">
+      <div className={clsx('flex shrink-0 relative', slim ? 'flex-col items-center gap-2.5 pt-3.5 pb-1' : 'h-[68px] items-center px-5')}>
+        <Link to={admin ? '/admin' : '/app'} onClick={onNavigate} aria-label={`${siteName} ${admin ? 'admin' : 'dashboard'}`} className="rounded-full">
+          {slim ? <span className="grid place-items-center size-11 rounded-full bg-white/15 border border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,.3)]"><LogoTile size={30} /></span> : <Logo name={siteName} />}
+        </Link>
+        {onToggle && (
+          <button type="button" onClick={onToggle} data-testid="rail-toggle" aria-label={slim ? 'Expand sidebar' : 'Collapse sidebar'} title={slim ? 'Expand sidebar' : 'Collapse sidebar'}
+            className={clsx('grid place-items-center size-7 rounded-full bg-white/15 border border-white/25 text-white hover:bg-white/30 transition-colors', !slim && 'ml-auto')}>
+            {slim ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
+          </button>
+        )}
       </div>
-      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-6" aria-label="Main">
-        {NAV.map((g) => (
-          <div key={g.group}>{group(g.group)}<div className="space-y-1">{g.items.map((i) => <NavItem key={i.to} item={i} onClick={onNavigate} slim={slim} />)}</div></div>
+      <nav className={clsx('flex-1 overflow-y-auto overflow-x-hidden py-3 space-y-5 [scrollbar-width:none]', slim ? 'px-2' : 'px-3')} aria-label="Main">
+        {admin && adminBlock}
+        {admin && <div>{group('Trading app')}<NavItem item={{ to: '/app', label: 'Back to trading app', icon: ArrowLeft, end: true }} onClick={onNavigate} slim={slim} /></div>}
+        {!admin && NAV.map((g) => (
+          <div key={g.group}>{group(g.group)}<div className="space-y-1.5">{g.items.map((i) => <NavItem key={i.to} item={i} onClick={onNavigate} slim={slim} />)}</div></div>
         ))}
-        {user?.role === 'admin' && <div>{group('Administration', '!text-accent-2')}{slim && <div className="xl:hidden mx-3 mb-2 border-t border-line" />}<div className="space-y-1">{ADMIN_NAV.map((i) => <NavItem key={i.to} item={i} onClick={onNavigate} slim={slim} />)}</div></div>}
+        {!admin && adminBlock}
       </nav>
-      <div className={clsx('p-3 border-t border-line space-y-3 shrink-0', slim && 'hidden xl:block')}>
-        <div className="flex items-center gap-2 text-[11px] text-mute px-1">
-          <span className={clsx('size-1.5 rounded-full', connected ? 'bg-up live-dot !size-1.5' : 'bg-warn')} />
-          <span>{connected ? 'Live feed' : 'Reconnecting'}</span>
-          <span className="ml-auto badge badge-neutral !h-[20px] num">{status?.cryptoSource === 'binance' ? 'BINANCE' : 'SIM'}</span>
+      {!slim ? (
+        <div className="p-3 space-y-3 shrink-0">
+          <div className="flex items-center gap-2 text-[11px] text-[#c4d1e6] px-2">
+            <span className={clsx('size-1.5 rounded-full', connected ? 'bg-[#45d99a] live-dot !size-1.5' : 'bg-warn')} />
+            <span>{connected ? 'Live feed' : 'Reconnecting'}</span>
+            <span className="ml-auto rounded-full border border-white/20 px-2 h-5 grid place-items-center num text-[10px]">{status?.cryptoSource === 'binance' ? 'BINANCE' : 'SIM'}</span>
+          </div>
+          <div className="flex items-center gap-2.5 p-2 rounded-2xl bg-white/[0.08] border border-white/10">
+            <Avatar name={user?.name} />
+            <div className="min-w-0 flex-1"><div className="text-[13px] font-medium truncate">{user?.name}</div><div className="text-[11px] text-[#c4d1e6] capitalize">{user?.role}</div></div>
+            <button className="grid place-items-center size-8 rounded-full hover:bg-white/15" onClick={out} aria-label="Sign out" title="Sign out"><LogOut size={15} /></button>
+          </div>
         </div>
-        <div className="flex items-center gap-2.5 px-1 py-1">
-          <Avatar name={user?.name} />
-          <div className="min-w-0 flex-1"><div className="text-[13px] font-medium truncate">{user?.name}</div><div className="text-[11px] text-mute capitalize">{user?.role}</div></div>
-          <button className="btn btn-ghost btn-sm btn-icon" onClick={out} aria-label="Sign out" title="Sign out"><LogOut size={15} /></button>
-        </div>
-      </div>
-      {slim && <div className="xl:hidden p-3 border-t border-line flex justify-center"><button className="btn btn-ghost btn-icon" onClick={out} aria-label="Sign out" title="Sign out"><LogOut size={16} /></button></div>}
+      ) : <div className="p-3 flex justify-center"><button className="grid place-items-center size-11 rounded-full bg-white/[0.08] border border-white/10 hover:bg-white/15" onClick={out} aria-label="Sign out" title="Sign out"><LogOut size={16} /></button></div>}
     </div>
   );
 }
 
 const Avatar = ({ name, size = 'size-9' }) => (
-  <span className={clsx(size, 'rounded-full grid place-items-center text-[13px] font-semibold text-white shrink-0 bg-[linear-gradient(135deg,#2f6bea,#0f3a91)] ring-2 ring-white/10')} aria-hidden>{name?.[0]?.toUpperCase()}</span>
+  <span className={clsx(size, 'rounded-full grid place-items-center text-[13px] font-semibold text-white shrink-0 bg-[linear-gradient(135deg,#3b7bf0,#0f2a66)] ring-2 ring-white/10')} aria-hidden>{name?.[0]?.toUpperCase()}</span>
 );
 
 /** Symbol search in the top bar: type a pair or a name, Enter opens it in the terminal. "/" focuses it. */
@@ -170,23 +188,30 @@ function UserMenu() {
 }
 
 const BOTTOM = [
-  { to: '/app', label: 'Home', icon: LayoutDashboard, end: true },
+  { to: '/app', label: 'Home', icon: Home, end: true },
   { to: '/app/markets', label: 'Markets', icon: BarChart3 },
-  { to: '/app/trade', label: 'Trade', icon: CandlestickChart },
-  { to: '/app/signals', label: 'Signals', icon: Radio },
+  { to: '/app/signals', label: 'Signals', icon: Radio, end: true },
+  { to: '/app/records', label: 'History', icon: History },
+  { to: '/app/account', label: 'Account', icon: UserCircle },
+];
+const BOTTOM_ADMIN = [
+  { to: '/admin', label: 'Overview', icon: ShieldCheck, end: true },
+  { to: '/admin/users', label: 'Users', icon: Users },
+  { to: '/admin/signals', label: 'Signals', icon: Megaphone },
+  { to: '/admin/email', label: 'Email', icon: Mail },
+  { to: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
-/** Mobile bottom navigation (thumb reach), "More" opens the full menu drawer. */
-function BottomNav({ onMore }) {
+/** Mobile: floating rounded glass bar (thumb reach). The full menu stays in the top-bar drawer. */
+function BottomNav({ admin }) {
   return (
     <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 px-3 pb-[max(env(safe-area-inset-bottom),10px)] pt-2 pointer-events-none" aria-label="Quick navigation">
-      <div className="on-dark pointer-events-auto mx-auto max-w-md grid grid-cols-5 rounded-2xl bg-night/95 backdrop-blur-lg border border-white/10 shadow-[0_18px_40px_-12px_rgba(10,18,34,.55)] px-1.5 py-1.5">
-        {BOTTOM.map((i) => (
-          <NavLink key={i.to} to={i.to} end={i.end} className={({ isActive }) => clsx('flex flex-col items-center justify-center gap-0.5 h-12 rounded-xl text-[10.5px] font-medium transition-colors', isActive ? 'bg-white/[0.09] text-ink' : 'text-mute hover:text-ink')}>
-            {({ isActive }) => <><i.icon size={19} strokeWidth={1.8} className={isActive ? 'text-accent-2' : ''} />{i.label}</>}
+      <div className="on-dark pointer-events-auto mx-auto max-w-md grid grid-cols-5 rounded-[26px] bg-[linear-gradient(160deg,rgba(40,74,130,.78),rgba(8,20,43,.86))] backdrop-blur-xl border border-white/15 shadow-[0_18px_40px_-12px_rgba(8,20,43,.6),inset_0_1px_0_rgba(255,255,255,.18)] px-1.5 py-1.5">
+        {(admin ? BOTTOM_ADMIN : BOTTOM).map((i) => (
+          <NavLink key={i.to} to={i.to} end={i.end} className={({ isActive }) => clsx('flex flex-col items-center justify-center gap-0.5 h-[52px] rounded-[20px] text-[10.5px] font-medium transition-colors', isActive ? 'bg-white/[0.16] text-white shadow-[inset_0_1px_0_rgba(255,255,255,.2)]' : 'text-[#c4d1e6] hover:text-white')}>
+            {({ isActive }) => <><i.icon size={19} strokeWidth={1.8} className={isActive ? 'text-[#9cc3ff]' : ''} />{i.label}</>}
           </NavLink>
         ))}
-        <button onClick={onMore} className="flex flex-col items-center justify-center gap-0.5 h-12 rounded-xl text-[10.5px] font-medium text-mute hover:text-ink" aria-label="Open full menu"><MoreHorizontal size={19} />More</button>
       </div>
     </nav>
   );
@@ -238,6 +263,7 @@ function AccountNotices() {
 
 export default function AppShell() {
   const [drawer, setDrawer] = useState(false);
+  const [rail, setRail] = useRail();
   const location = useLocation(); const nav = useNavigate(); const outlet = useOutlet();
   const token = useAuth((s) => s.user?.id);
   const startLive = useMarket((s) => s.startLive); const stopLive = useMarket((s) => s.stopLive); const loadWatch = useMarket((s) => s.loadWatchlist);
@@ -266,40 +292,54 @@ export default function AppShell() {
   }, [token]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => { setDrawer(false); window.scrollTo({ top: 0 }); }, [location.pathname]);
+  const admin = location.pathname.startsWith('/admin');
+  const slim = rail === 'mini';
+  const pad = rail === 'hidden' ? 'lg:pl-0' : slim ? 'lg:pl-[108px]' : 'lg:pl-[276px]';
 
   return (
-    <div className="min-h-dvh lg:pl-[76px] xl:pl-[248px]">
-      <aside className="on-dark hidden lg:block fixed inset-y-0 left-0 w-[76px] xl:w-[248px] rail z-40"><SidebarContent slim /></aside>
+    <div className={clsx('min-h-dvh transition-[padding] duration-300', pad)} data-rail={rail}>
+      {rail !== 'hidden' && (
+        <aside className={clsx('on-dark hidden lg:block fixed z-40 top-3 bottom-3 left-3 rail rounded-[28px] transition-[width] duration-300', slim ? 'w-[84px]' : 'w-[252px]')} data-testid="sidebar">
+          <SidebarContent slim={slim} admin={admin} onToggle={() => setRail(slim ? 'open' : 'mini')} />
+        </aside>
+      )}
 
-      {/* top bar: search, live state, notifications, account */}
+      {/* top bar: sidebar toggle, search (app) or title (admin), live state, notifications, account */}
       <header className="sticky top-0 z-40 h-16 px-4 sm:px-6 flex items-center gap-3 frost !border-x-0 !border-t-0">
-        <Link to="/app" className="lg:hidden shrink-0" aria-label={`${siteName} dashboard`}><Logo name={siteName} size={30} compact /></Link>
-        <div className="hidden sm:block flex-1 min-w-0"><TopSearch /></div>
-        <div className="sm:hidden flex-1" />
+        <button className="hidden lg:grid btn btn-ghost btn-icon !rounded-full" onClick={() => setRail(rail === 'hidden' ? 'open' : 'hidden')} data-testid="rail-hide" aria-label={rail === 'hidden' ? 'Show sidebar' : 'Hide sidebar'} title={rail === 'hidden' ? 'Show sidebar' : 'Hide sidebar'}>
+          {rail === 'hidden' ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
+        </button>
+        <Link to={admin ? '/admin' : '/app'} className={clsx('shrink-0', rail === 'hidden' ? '' : 'lg:hidden')} aria-label={`${siteName} ${admin ? 'admin' : 'dashboard'}`}><Logo name={siteName} size={30} compact /></Link>
+        {admin ? (
+          <div className="flex-1 min-w-0 flex items-center gap-2">
+            <span className="badge badge-accent !h-7 !px-3 !rounded-full"><ShieldCheck size={13} />Admin panel</span>
+            <Link to="/app" className="hidden md:inline-flex btn btn-ghost btn-sm !rounded-full"><ArrowLeft size={13} />Trading app</Link>
+          </div>
+        ) : <><div className="hidden sm:block flex-1 min-w-0"><TopSearch /></div><div className="sm:hidden flex-1" /></>}
         <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-          <LiveState />
-          <SignalBell />
+          {!admin && <LiveState />}
+          {!admin && <SignalBell />}
           <UserMenu />
-          <button className="lg:hidden btn btn-ghost btn-icon !rounded-xl" onClick={() => setDrawer(true)} aria-label="Open menu" aria-expanded={drawer}><Menu size={18} /></button>
+          <button className="lg:hidden btn btn-ghost btn-icon !rounded-full" onClick={() => setDrawer(true)} aria-label="Open menu" aria-expanded={drawer}><Menu size={18} /></button>
         </div>
       </header>
       <AnimatePresence>
         {drawer && (
           <motion.div className="lg:hidden fixed inset-0 z-[70]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <div className="absolute inset-0 bg-night/55 backdrop-blur-[2px]" onClick={() => setDrawer(false)} aria-hidden />
-            <motion.aside role="dialog" aria-label="Menu" className="on-dark absolute inset-y-0 left-0 w-[290px] max-w-[86vw] rail" initial={{ x: -300 }} animate={{ x: 0 }} exit={{ x: -300 }} transition={{ type: 'spring', stiffness: 340, damping: 34 }}>
-              <button className="btn btn-ghost btn-sm btn-icon absolute right-3 top-4 z-10" onClick={() => setDrawer(false)} aria-label="Close menu"><X size={16} /></button>
-              <SidebarContent onNavigate={() => setDrawer(false)} />
+            <div className="absolute inset-0 bg-night/45 backdrop-blur-[6px]" onClick={() => setDrawer(false)} aria-hidden />
+            <motion.aside role="dialog" aria-label="Menu" className="on-dark absolute top-2 bottom-2 left-2 w-[290px] max-w-[86vw] rail rounded-[26px]" initial={{ x: -310 }} animate={{ x: 0 }} exit={{ x: -310 }} transition={{ type: 'spring', stiffness: 340, damping: 34 }}>
+              <button className="absolute right-3 top-5 z-10 grid place-items-center size-8 rounded-full bg-white/15 text-white hover:bg-white/25" onClick={() => setDrawer(false)} aria-label="Close menu"><X size={16} /></button>
+              <SidebarContent onNavigate={() => setDrawer(false)} admin={admin} />
             </motion.aside>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <div className="sticky top-16 z-30"><TickerTape /></div>
+      {!admin && <div className="sticky top-16 z-30"><TickerTape /></div>}
       <main className="px-4 sm:px-6 xl:px-8 py-5 sm:py-7 pb-28 lg:pb-8 max-w-[1600px] mx-auto">
-        <div className="sm:hidden mb-4"><TopSearch /></div>
+        {!admin && <div className="sm:hidden mb-4"><TopSearch /></div>}
         <AccountNotices />
-        <AdSlot slot="top" className="mb-5" />
+        {!admin && <AdSlot slot="top" className="mb-5" />}
         <AnimatePresence mode="wait" initial={false}>
           <motion.div key={location.pathname} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.18, ease: 'easeOut' }}>
             <Suspense fallback={<PageFallback />}>{outlet}</Suspense>
@@ -310,7 +350,7 @@ export default function AppShell() {
         <p>Trading involves risk. Signals are educational and not financial advice. Paper trading uses virtual money. Crypto prices come from Binance public data when reachable; other instruments are simulated and labelled SIM.</p>
         <p className="mt-2 space-x-3"><Link to="/terms" className="hover:text-ink underline underline-offset-2">Terms of Service</Link><Link to="/privacy" className="hover:text-ink underline underline-offset-2">Privacy Policy</Link><Link to="/risk" className="hover:text-ink underline underline-offset-2">Risk Disclosure</Link></p>
       </footer>
-      <BottomNav onMore={() => setDrawer(true)} />
+      <BottomNav admin={admin} />
     </div>
   );
 }

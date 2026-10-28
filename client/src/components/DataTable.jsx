@@ -11,7 +11,7 @@ export default function DataTable({ columns, data, loading, error, onRetry, empt
         <table className="tbl" style={minWidth ? { minWidth } : undefined}>
           <thead>
             {table.getHeaderGroups().map((hg) => (
-              <tr key={hg.id}>{hg.headers.map((h) => <th key={h.id} className={h.column.columnDef.meta?.right ? 'r' : ''}>{flexRender(h.column.columnDef.header, h.getContext())}</th>)}</tr>
+              <tr key={hg.id}>{hg.headers.map((h) => <th key={h.id} className={[h.column.columnDef.meta?.right ? 'r' : '', h.column.columnDef.meta?.sticky ? 'sticky-col' : ''].join(' ')}>{flexRender(h.column.columnDef.header, h.getContext())}</th>)}</tr>
             ))}
           </thead>
           <tbody>
@@ -19,7 +19,7 @@ export default function DataTable({ columns, data, loading, error, onRetry, empt
               ? Array.from({ length: 6 }).map((_, i) => <tr key={i}>{columns.map((c, j) => <td key={j}><Skeleton className="h-4 w-full max-w-[110px]" /></td>)}</tr>)
               : table.getRowModel().rows.map((row) => (
                 <tr key={row.id} onClick={onRowClick ? () => onRowClick(row.original) : undefined} className={onRowClick ? 'cursor-pointer' : ''}>
-                  {row.getVisibleCells().map((cell) => <td key={cell.id} className={cell.column.columnDef.meta?.right ? 'r' : ''}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}
+                  {row.getVisibleCells().map((cell) => <td key={cell.id} className={[cell.column.columnDef.meta?.right ? 'r' : '', cell.column.columnDef.meta?.sticky ? 'sticky-col' : ''].join(' ')}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</td>)}
                 </tr>
               ))}
           </tbody>

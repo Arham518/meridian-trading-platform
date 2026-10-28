@@ -59,29 +59,58 @@ function LiveBoard() {
   );
 }
 
-/** Floating glass widgets (quote, watchlist, signal) built from live quotes: the default hero visual. */
+/** Default hero visual (home reference): a framed app overview built from live quotes: icon rail, portfolio-style
+ *  chart card, pastel asset tiles, market list and a dark promo card. Pure DOM/SVG, no images. */
+const TILE = ['bg-lav', 'bg-mint', 'bg-cream'];
 function HeroWidgets() {
   const q = useMarket((s) => s.quotes); const spark = useSparklines();
-  const btc = q.BTCUSDT; const list = ['ETHUSDT', 'EURUSD', 'XAUUSD', 'NAS100'].map((s) => q[s]).filter(Boolean);
-  const float = (d) => ({ initial: { opacity: 0, y: 18 }, animate: { opacity: 1, y: 0 }, transition: { delay: d, duration: 0.6, ease: 'easeOut' } });
+  const btc = q.BTCUSDT; const assets = ['ETHUSDT', 'SOLUSDT', 'XAUUSD'].map((s) => q[s]).filter(Boolean);
+  const rows = ['EURUSD', 'NAS100', 'BNBUSDT'].map((s) => q[s]).filter(Boolean);
+  const rise = { initial: { opacity: 0, y: 22, scale: 0.98 }, animate: { opacity: 1, y: 0, scale: 1 }, transition: { duration: 0.7, ease: [0.2, 0.8, 0.2, 1] } };
   return (
-    <div className="relative h-full w-full" aria-label="Live market widgets">
-      <div aria-hidden className="absolute inset-[6%] rounded-[40px] bg-[radial-gradient(60%_60%_at_60%_40%,rgba(29,95,224,0.28),transparent_70%),radial-gradient(40%_40%_at_20%_80%,rgba(124,92,230,0.14),transparent_70%)] blur-2xl" />
-      <div aria-hidden className="absolute inset-0 dot-grid opacity-60 [mask-image:radial-gradient(closest-side,black,transparent)]" />
-      <motion.div {...float(0.1)} className="glass glass-strong absolute left-0 sm:left-[4%] top-[4%] w-[78%] sm:w-[62%] p-5 floaty">
-        <div className="flex items-center justify-between"><span className="text-[13px] font-semibold flex items-center gap-2"><span className="size-7 rounded-lg bg-cream text-[#7a4a00] grid place-items-center text-[10px] font-bold">BTC</span>Bitcoin</span>{btc && <Change pct={btc.changePct} className="text-[12px] font-semibold" />}</div>
-        {btc ? <Price value={btc.price} decimals={btc.decimals} className="block text-[1.7rem] sm:text-[2rem] font-semibold tracking-[-0.04em] mt-3" /> : <div className="skeleton h-9 w-40 mt-3" />}
-        <div className="mt-2 -mx-1"><Sparkline data={spark.BTCUSDT} width={300} height={64} up={(btc?.changePct ?? 0) >= 0} className="w-full" /></div>
-      </motion.div>
-      <motion.div {...float(0.25)} className="glass glass-strong absolute right-0 top-[30%] w-[64%] sm:w-[48%] p-4 floaty [animation-delay:-2s] hidden min-[480px]:block">
-        <div className="text-[12px] font-semibold text-mute mb-2">Watchlist</div>
-        <ul className="space-y-2.5">{list.map((x) => (
-          <li key={x.symbol} className="flex items-center justify-between gap-2 text-[12.5px]"><span className="font-semibold truncate">{pairLabel(x.symbol)}</span><span className="text-right"><Price value={x.price} decimals={x.decimals} className="block font-medium" /><Change pct={x.changePct} className="text-[11px]" /></span></li>
-        ))}{!list.length && [0, 1, 2].map((i) => <li key={i} className="skeleton h-7" />)}</ul>
-      </motion.div>
-      <motion.div {...float(0.4)} className="on-dark night absolute right-0 min-[480px]:right-auto min-[480px]:left-[6%] bottom-[4%] w-[86%] min-[480px]:w-[80%] sm:w-[60%] rounded-2xl p-4 shadow-[var(--shadow-float)] floaty [animation-delay:-4s]">
-        <div className="flex items-center gap-2"><span className="text-[13px] font-semibold">EUR/USD</span><span className="badge badge-down">SELL</span><span className="num text-[11px] text-dim ml-auto">Example</span></div>
-        <div className="grid grid-cols-3 gap-2 mt-3">{[['Entry', '1.0842', ''], ['Stop', '1.0872', 'down'], ['Target', '1.0804', 'up']].map(([k, v, t]) => <div key={k} className="rounded-xl bg-white/[0.06] border border-white/10 px-2.5 py-2"><div className="text-[10.5px] text-mute">{k}</div><div className={clsx('num text-[13px] font-semibold mt-0.5', t)}>{v}</div></div>)}</div>
+    <div className="relative h-full w-full flex items-center" aria-label="Live market overview">
+      <div aria-hidden className="absolute inset-[2%] rounded-[48px] bg-[radial-gradient(60%_60%_at_60%_40%,rgba(111,166,239,0.45),transparent_70%),radial-gradient(40%_40%_at_15%_85%,rgba(167,148,245,0.25),transparent_70%)] blur-2xl" />
+      <motion.div {...rise} className="relative w-full rounded-[30px] bg-[#101317] p-2 sm:p-2.5 shadow-[0_40px_80px_-30px_rgba(11,20,36,.55)] flex gap-2 sm:gap-2.5">
+        <div className="hidden min-[480px]:flex flex-col items-center gap-3 w-12 sm:w-14 py-3 shrink-0" aria-hidden>
+          <span className="size-9 rounded-xl bg-cream grid place-items-center text-[#101317]"><CandlestickChart size={16} /></span>
+          {[Wallet, Radio, FileSpreadsheet].map((I, i) => <span key={i} className={clsx('size-9 rounded-xl grid place-items-center', i === 0 ? 'bg-white/12 text-white' : 'text-white/55')}><I size={16} /></span>)}
+        </div>
+        <div className="flex-1 min-w-0 rounded-[24px] bg-white/95 p-3.5 sm:p-5">
+          <div className="flex items-center justify-between"><span className="text-[1.05rem] sm:text-[1.3rem] font-bold tracking-[-0.03em] text-ink">Overview</span><span className="text-[10.5px] text-mute rounded-full border border-line-2 px-2.5 h-6 grid place-items-center">Live</span></div>
+          <div className="grid grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] gap-2.5 sm:gap-3 mt-3">
+            <div className="rounded-2xl bg-sky p-3 sm:p-3.5 min-w-0">
+              <div className="text-[10.5px] font-medium text-mute">Bitcoin</div>
+              {btc ? <Price value={btc.price} decimals={btc.decimals} className="block text-[1.05rem] sm:text-[1.35rem] font-bold tracking-[-0.03em] text-ink" /> : <div className="skeleton h-6 w-28 mt-1" />}
+              {btc && <Change pct={btc.changePct} className="text-[10.5px] font-semibold" />}
+              <div className="mt-1.5 -mx-1"><Sparkline data={spark.BTCUSDT} width={240} height={52} up={(btc?.changePct ?? 0) >= 0} className="w-full" /></div>
+            </div>
+            <div className="grid grid-cols-1 min-[420px]:grid-cols-3 gap-2 min-w-0">
+              {(assets.length ? assets : [null, null, null]).map((x, i) => (
+                <div key={x?.symbol || i} className={clsx(TILE[i], 'rounded-2xl p-2.5 min-w-0 flex min-[420px]:flex-col justify-between gap-1 [&_.down]:!text-[#9c1426] [&_.up]:!text-[#055c37]')}>
+                  <span className="text-[11px] font-bold text-ink truncate">{x ? pairLabel(x.symbol).replace('/USDT', '') : '··'}</span>
+                  <span className="min-w-0">{x ? <Price value={x.price} decimals={x.decimals} className="block text-[11px] text-ink/80 truncate" /> : <span className="skeleton h-3 w-10 block" />}{x && <Change pct={x.changePct} className="text-[10px] font-semibold" />}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="grid sm:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] gap-2.5 sm:gap-3 mt-2.5 sm:mt-3">
+            <ul className="space-y-1.5 min-w-0">
+              {rows.map((x) => (
+                <li key={x.symbol} className="flex items-center gap-2.5 rounded-xl px-1.5 py-1">
+                  <span className="size-7 rounded-lg bg-[#101317] text-white grid place-items-center text-[9px] font-bold shrink-0">{pairLabel(x.symbol).replace('/', '').slice(0, 3)}</span>
+                  <span className="text-[11.5px] font-semibold text-ink flex-1 truncate">{pairLabel(x.symbol)}</span>
+                  <Price value={x.price} decimals={x.decimals} className="text-[11px] text-ink/80" /><Change pct={x.changePct} className="text-[10.5px] font-semibold w-14 text-right" />
+                </li>
+              ))}
+              {!rows.length && [0, 1, 2].map((i) => <li key={i} className="skeleton h-7" />)}
+            </ul>
+            <div className="hidden sm:flex on-dark rounded-2xl bg-[#101317] p-3.5 flex-col justify-between relative overflow-hidden">
+              <span aria-hidden className="absolute -right-6 -bottom-8 w-24 h-16 rounded-xl border border-white/20 rotate-[-10deg]" />
+              <p className="text-[0.95rem] font-semibold leading-tight text-white">Practise with <span className="rounded-full border border-white/50 px-1.5">100k</span> paper USD</p>
+              <span className="self-start mt-3 rounded-full bg-[#bcd8ff] text-[#0b1424] text-[10.5px] font-semibold px-3 h-7 grid place-items-center">Start now</span>
+            </div>
+          </div>
+        </div>
       </motion.div>
     </div>
   );
@@ -104,12 +133,12 @@ function Hero() {
             {tagline && tagline !== 'Trade signals, live charts and paper trading in one place.' ? `${tagline} ` : ''}A desk publishes trade plans. You follow them on live candlestick charts, practise them in a paper account, and export every result to Excel.
           </motion.p>
           <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18, duration: 0.5 }} className="mt-8 flex flex-wrap items-center gap-3">
-            <Link to={user ? '/app' : '/register'} className="btn btn-primary !h-12 !px-6 text-[0.95rem]">{user ? 'Open the terminal' : 'Create a free account'}<ArrowRight size={16} /></Link>
+            <Link to={user ? '/app' : '/register'} className="btn btn-primary !h-12 !px-6 text-[0.95rem]">{user ? 'Open dashboard' : 'Create a free account'}<ArrowRight size={16} /></Link>
             <a href="#record" className="btn btn-ghost !h-12 !px-6 text-[0.95rem]">Read the track record</a>
           </motion.div>
           <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-[13px] text-mute">{['No card required', 'Virtual money only', 'Excel exports'].map((t) => <li key={t} className="flex items-center gap-2"><Check size={15} className="text-up" />{t}</li>)}</ul>
         </div>
-        <div className="relative min-w-0 h-[330px] min-[480px]:h-[400px] sm:h-[460px] lg:h-[520px]">
+        <div className="relative min-w-0 min-h-[300px] sm:min-h-[440px] lg:min-h-[520px] flex">
           {showVideo ? (
             <div className="absolute inset-0 flex items-center">
               <div aria-hidden className="absolute inset-[4%] rounded-[40px] bg-[radial-gradient(60%_60%_at_50%_50%,rgba(29,95,224,0.25),transparent_70%)] blur-2xl" />
@@ -265,8 +294,8 @@ function Steps() {
   const steps = [['Register and confirm your email', 'The confirmation link opens the signals desk and the paper account.'], ['Follow the open signals', 'Read the plan, then watch price move between the stop and the first target.'], ['Practise, then review', 'Place the same idea in the paper account and compare it with the record.']];
   return (
     <section id="how" className="scroll-mt-16 px-3 sm:px-5">
-      <div className="on-dark night relative overflow-hidden max-w-[1400px] mx-auto rounded-[28px] px-5 sm:px-10 py-14 sm:py-20">
-        <div aria-hidden className="absolute -right-24 -top-24 size-96 rounded-full bg-[radial-gradient(closest-side,rgba(47,107,234,0.45),transparent)]" />
+      <div className="on-dark glass-navy !rounded-[32px] relative overflow-hidden max-w-[1400px] mx-auto px-5 sm:px-10 py-14 sm:py-20">
+        <div aria-hidden className="absolute -right-24 -top-24 size-96 rounded-full bg-[radial-gradient(closest-side,rgba(59,123,240,0.45),transparent)]" />
         <div aria-hidden className="absolute -left-24 bottom-0 size-80 rounded-full bg-[radial-gradient(closest-side,rgba(63,211,148,0.16),transparent)]" />
         <div className="relative max-w-[1240px] mx-auto">
           <motion.p {...reveal} className="eyebrow">How it works</motion.p>
@@ -318,14 +347,14 @@ export default function Landing() {
           <Link to="/" aria-label={`${siteName} home`}><Logo name={siteName} /></Link>
           <nav className="hidden md:flex items-center gap-7" aria-label="Primary">{links.map(([l, h]) => <a key={h} href={h} className="text-[13px] text-mute hover:text-ink transition-colors">{l}</a>)}</nav>
           <div className="hidden md:flex items-center gap-2">
-            {user ? <Link to="/app" className="btn btn-primary btn-sm">Open terminal</Link> : <><Link to="/login" className="btn btn-ghost btn-sm !border-transparent !bg-transparent">Sign in</Link><Link to="/register" className="btn btn-primary btn-sm">Create account</Link></>}
+            {user ? <Link to={user.role === 'admin' ? '/admin' : '/app'} className="btn btn-primary btn-sm !rounded-full">{user.role === 'admin' ? 'Admin panel' : 'Open dashboard'}</Link> : <><Link to="/login" className="btn btn-ghost btn-sm !border-transparent !bg-transparent">Sign in</Link><Link to="/register" className="btn btn-primary btn-sm !rounded-full">Create account</Link></>}
           </div>
           <button className="md:hidden btn btn-ghost btn-sm btn-icon" onClick={() => setMenu((m) => !m)} aria-label={menu ? 'Close menu' : 'Open menu'} aria-expanded={menu}>{menu ? <X size={17} /> : <Menu size={17} />}</button>
         </div>
         {menu && (
           <motion.nav initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} className="md:hidden frost !rounded-2xl mt-2 px-5 pb-5 pt-1" aria-label="Mobile">
             {links.map(([l, h]) => <a key={h} href={h} onClick={() => setMenu(false)} className="block py-3 text-[15px] border-b border-line">{l}</a>)}
-            <div className="grid grid-cols-2 gap-2 pt-4">{user ? <Link to="/app" className="btn btn-primary col-span-2">Open terminal</Link> : <><Link to="/login" className="btn btn-ghost">Sign in</Link><Link to="/register" className="btn btn-primary">Create account</Link></>}</div>
+            <div className="grid grid-cols-2 gap-2 pt-4">{user ? <Link to={user.role === 'admin' ? '/admin' : '/app'} className="btn btn-primary col-span-2">{user.role === 'admin' ? 'Admin panel' : 'Open dashboard'}</Link> : <><Link to="/login" className="btn btn-ghost">Sign in</Link><Link to="/register" className="btn btn-primary">Create account</Link></>}</div>
           </motion.nav>
         )}
       </header>
@@ -342,12 +371,12 @@ export default function Landing() {
       <Faq />
 
       <section className="px-3 sm:px-5 pb-6">
-        <div className="on-dark night relative overflow-hidden max-w-[1400px] mx-auto rounded-[28px] grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center">
-          <div aria-hidden className="absolute -left-20 -top-28 size-96 rounded-full bg-[radial-gradient(closest-side,rgba(47,107,234,0.4),transparent)]" />
+        <div className="on-dark glass-navy !rounded-[32px] relative overflow-hidden max-w-[1400px] mx-auto grid lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] items-center">
+          <div aria-hidden className="absolute -left-20 -top-28 size-96 rounded-full bg-[radial-gradient(closest-side,rgba(59,123,240,0.4),transparent)]" />
           <div className="relative px-6 sm:px-12 py-14 sm:py-16">
             <p className="display text-[2.1rem] sm:text-[2.9rem] max-w-xl">Open a paper account and read the next signal.</p>
             <p className="text-mute mt-4 max-w-md">Free to join. Confirm your email and the signals desk, charts and the 100,000 USD paper account open straight away.</p>
-            <div className="mt-8 flex flex-wrap gap-3"><Link to={user ? '/app' : '/register'} className="btn btn-primary !h-12 !px-6">{user ? 'Open the terminal' : 'Create an account'}<ArrowRight size={16} /></Link>{!user && <Link to="/login" className="btn btn-light !h-12 !px-6">Sign in</Link>}</div>
+            <div className="mt-8 flex flex-wrap gap-3"><Link to={user ? '/app' : '/register'} className="btn btn-primary !h-12 !px-6">{user ? 'Open dashboard' : 'Create an account'}<ArrowRight size={16} /></Link>{!user && <Link to="/login" className="btn btn-light !h-12 !px-6">Sign in</Link>}</div>
           </div>
           {/* 3D candlestick scene: desktop only, mounted when scrolled into view, so three.js never loads on phones or on first paint */}
           <div className="relative hidden lg:block h-[420px] [mask-image:linear-gradient(to_right,transparent,black_25%)]">{wide && <HeroVisual />}</div>

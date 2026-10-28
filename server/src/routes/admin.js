@@ -38,7 +38,11 @@ router.get('/stats', wrap((req, res) => {
     failedLogins24h: one('SELECT COUNT(*) n FROM login_activity WHERE success=0 AND created_at >= ?', day).n,
     online: connectedCount(),
     signups,
-    recentActivity: db.prepare('SELECT * FROM login_activity ORDER BY id DESC LIMIT 8').all(),
+    recentActivity: db.prepare(`SELECT a.*, COALESCE(a.user_id, u.id) AS user_id, u.name AS user_name, u.role AS user_role, u.status AS user_status
+      FROM login_activity a LEFT JOIN users u ON u.id = COALESCE(a.user_id, (SELECT id FROM users WHERE email = a.email COLLATE NOCASE))
+      ORDER BY a.id DESC LIMIT 8`).all(),
+    recentUsers: db.prepare('SELECT id, name, email, role, status, email_verified_at, created_at, last_login_at FROM users ORDER BY created_at DESC, id DESC LIMIT 5').all(),
+    pendingVerification: one('SELECT COUNT(*) n FROM users WHERE email_verified_at IS NULL').n,
   });
 }));
 
@@ -66,6 +70,15 @@ router.get('/users/export.csv', wrap((req, res) => {
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="users-${new Date().toISOString().slice(0, 10)}.csv"`);
   res.send(`\ufeff${lines.join('\r\n')}\r\n`);
+}));
+
+// one user (same columns as the list) + their latest sign-in events: used by the Edit drawer from any admin page
+router.get('/users/:id(\\d+)', wrap((req, res) => {
+  const d = DATASETS.users;
+  const row = db.prepare(`SELECT ${d.select} FROM ${d.from} WHERE u.id = ?`).get(Number(req.params.id));
+  if (!row) return res.status(404).json({ error: 'User not found' });
+  const activity = db.prepare('SELECT id, event, success, ip, created_at FROM login_activity WHERE user_id = ? ORDER BY id DESC LIMIT 6').all(row.id);
+  res.json({ user: row, activity });
 }));
 
 // ------------------------------------------------------------------ user management (create / edit / password)
@@ -238,6 +251,7 @@ router.put('/settings', wrap((req, res) => {
     dropUnusedAdImages(before, ads);
     resetAdsenseCache();
   }
+  logActivity({ userId: req.user.id, email: req.user.email, event: 'admin_settings', req });
   scheduleMasterRebuild();
   res.json({ settings: adminSettings() });
 }));
@@ -267,9 +281,14 @@ router.put('/hero-video', wrap((req, res) => {
   const d = parse(z.object({ url: heroVideoSchema }), req.body);
   if (d.url !== getSettings().hero_video_url) dropOldVideo();
   setSetting('hero_video_url', d.url);
+  logActivity({ userId: req.user.id, email: req.user.email, event: 'admin_hero_video', req });
   res.json({ heroVideoUrl: d.url || null, heroVideo: describeVideo(d.url) });
 }));
-router.delete('/hero-video', wrap((req, res) => { dropOldVideo(); setSetting('hero_video_url', ''); res.json({ heroVideoUrl: null }); }));
+router.delete('/hero-video', wrap((req, res) => {
+  dropOldVideo(); setSetting('hero_video_url', '');
+  logActivity({ userId: req.user.id, email: req.user.email, event: 'admin_hero_video_removed', req });
+  res.json({ heroVideoUrl: null });
+}));
 
 // ---- ad images: PNG / JPEG / WebP / GIF up to 2 MB
 const IEXT = { 'image/png': '.png', 'image/jpeg': '.jpg', 'image/webp': '.webp', 'image/gif': '.gif' };

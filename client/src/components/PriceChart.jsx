@@ -166,7 +166,7 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
                 <div className="absolute right-0 z-40 mt-2 w-52 glass glass-strong p-2">
                   {[['ma', 'MA (20)', C.ma], ['ema', 'EMA (50)', C.ema], ['bb', 'Bollinger (20, 2)', C.mute], ['vol', 'Volume', C.dim], ['rsi', 'RSI (14)', C.rsi]].map(([k, label, col]) => (
                     <label key={k} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-ink/[0.05] cursor-pointer text-sm">
-                      <input type="checkbox" className="accent-[#1d5fe0] size-3.5" checked={!!ind[k]} onChange={() => tgl(k)} />
+                      <input type="checkbox" className="accent-[#1a5ad7] size-3.5" checked={!!ind[k]} onChange={() => tgl(k)} />
                       <span className="size-2 rounded-full" style={{ background: col }} />{label}
                     </label>
                   ))}

@@ -61,48 +61,50 @@ export function FormNote({ children, tone }) {
   return <p role="status" className={clsx('text-[13px] border rounded-md px-3 py-2', tone === 'ok' ? 'text-up border-up/35 bg-up/[0.06]' : 'text-mute border-line-2')}>{children}</p>;
 }
 
-/** Split layout used by every sign-in / recovery page. The right half shows real, public track-record rows. */
+/** Full liquid-glass layout used by every sign-in / recovery page: blurred colour-light backdrop, one frosted card,
+ *  and (on wide screens) a second glass card with real, public track-record rows. */
 export function AuthLayout({ title, subtitle, children, footer, wide = false }) {
   const siteName = useSettings((s) => s.siteName);
   const stats = useFetch(() => api('/stats'), []);
   const d = stats.data;
   return (
-    <div className="min-h-dvh grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.92fr)] bg-bg">
-      <div className="flex flex-col px-5 sm:px-12 py-7">
-        <Link to="/" className="self-start" aria-label={`${siteName} home`}><Logo name={siteName} /></Link>
-        <div className="flex-1 grid place-items-center py-10">
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }} className={clsx('w-full', wide ? 'max-w-[500px]' : 'max-w-[420px]')}>
-            <div className="glass p-6 sm:p-8">
-              <h1 className="display text-[2rem] sm:text-[2.3rem]">{title}</h1>
-              {subtitle && <p className="text-mute mt-2.5 text-[0.9375rem] leading-relaxed">{subtitle}</p>}
+    <div className="min-h-dvh relative isolate text-white" data-testid="auth-glass">
+      <div className="liquid-bg -z-10" aria-hidden><span className="orb o1" /><span className="orb o2" /><span className="orb o3" /><span className="orb o4" /><span className="grain" /></div>
+      <div className="min-h-dvh max-w-[1180px] mx-auto px-4 sm:px-8 py-6 sm:py-8 flex flex-col">
+        <div className="flex items-center justify-between">
+          <Link to="/" aria-label={`${siteName} home`} className="on-dark"><Logo name={siteName} /></Link>
+          <Link to="/" className="btn btn-glass btn-sm !h-9 !px-4">Back to home</Link>
+        </div>
+        <div className="flex-1 grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] gap-8 xl:gap-14 items-center py-8 sm:py-10">
+          <motion.div initial={{ opacity: 0, y: 12, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ duration: 0.35, ease: 'easeOut' }} className={clsx('w-full mx-auto lg:mx-0 lg:justify-self-end', wide ? 'max-w-[520px]' : 'max-w-[440px]')}>
+            <div className="liquid-card p-6 sm:p-9">
+              <div className="flex items-center justify-between text-[12px] text-white/85 mb-6"><span>{siteName}</span><span>Secure sign-in</span></div>
+              <h1 className="display text-[2.1rem] sm:text-[2.5rem] font-medium">{title}</h1>
+              {subtitle && <p className="text-white/85 mt-2.5 text-[0.9375rem] leading-relaxed">{subtitle}</p>}
               <div className="mt-7">{children}</div>
-              {footer && <div className="text-[13px] text-mute mt-7 pt-5 border-t border-line">{footer}</div>}
+              {footer && <div className="text-[13px] text-white/85 mt-7 pt-5 border-t border-white/20 text-center">{footer}</div>}
             </div>
           </motion.div>
-        </div>
-        <p className="text-[11px] text-dim max-w-md">Trading involves risk. Signals are educational and not financial advice. <Link to="/terms" className="underline underline-offset-2 hover:text-ink">Terms</Link> · <Link to="/privacy" className="underline underline-offset-2 hover:text-ink">Privacy</Link> · <Link to="/risk" className="underline underline-offset-2 hover:text-ink">Risk</Link></p>
-      </div>
-      <aside className="on-dark hidden lg:flex flex-col justify-end night relative overflow-hidden px-12 py-12">
-        <div aria-hidden className="absolute -top-40 -right-40 size-[520px] rounded-full bg-[radial-gradient(closest-side,rgba(47,107,234,0.35),transparent)]" />
-        <div aria-hidden className="absolute inset-0 dot-grid opacity-40 [mask-image:linear-gradient(to_bottom,black,transparent_70%)]" />
-        <div className="relative">
-          <p className="eyebrow mb-3">Track record</p>
-          <p className="display text-[2.8rem] max-w-md">Every signal is recorded, wins and losses alike.</p>
-          <div className="mt-8 max-w-md glass !bg-white/[0.04] p-5">
-            <div className="grid grid-cols-3 gap-4 pb-4 border-b border-line">
-              <div><div className="num text-[1.6rem] font-medium">{d?.winRate != null ? `${d.winRate}%` : '--'}</div><div className="label mt-1">Win rate</div></div>
-              <div><div className="num text-[1.6rem] font-medium">{d?.total ?? '--'}</div><div className="label mt-1">Signals</div></div>
-              <div><div className={clsx('num text-[1.6rem] font-medium', d?.totalResult > 0 ? 'up' : d?.totalResult < 0 ? 'down' : '')}>{d ? fmtPct(d.totalResult, 1) : '--'}</div><div className="label mt-1">Net result</div></div>
+          <aside className="hidden lg:block max-w-[440px]">
+            <p className="text-[13px] font-semibold text-[#bcd5ff] mb-3">Track record</p>
+            <p className="display text-[2.6rem] xl:text-[3rem] font-medium">Every signal is recorded, wins and losses alike.</p>
+            <div className="mt-8 liquid-card !rounded-[22px] p-5">
+              <div className="grid grid-cols-3 gap-4 pb-4 border-b border-white/20">
+                <div><div className="num text-[1.6rem] font-medium">{d?.winRate != null ? `${d.winRate}%` : '--'}</div><div className="label mt-1">Win rate</div></div>
+                <div><div className="num text-[1.6rem] font-medium">{d?.total ?? '--'}</div><div className="label mt-1">Signals</div></div>
+                <div><div className={clsx('num text-[1.6rem] font-medium', d?.totalResult > 0 ? 'text-up' : d?.totalResult < 0 ? 'text-down' : '')}>{d ? fmtPct(d.totalResult, 1) : '--'}</div><div className="label mt-1">Net result</div></div>
+              </div>
+              <table className="tbl mt-1 [&_td]:!bg-transparent [&_td]:!border-white/10 [&_tr:hover]:!bg-white/5"><tbody>
+                {(d?.recent || []).slice(0, 5).map((r, i) => (
+                  <tr key={i}><td className="!pl-0">{pairLabel(r.pair)}</td><td><span className={clsx('num text-[11px] font-semibold', r.direction === 'BUY' ? 'text-up' : 'text-down')}>{r.direction}</span></td><td className="text-dim">{timeAgo(r.closedAt)}</td><td className={clsx('r num !pr-0', r.resultPct >= 0 ? 'text-up' : 'text-down')}>{fmtPct(r.resultPct)}</td></tr>
+                ))}
+              </tbody></table>
             </div>
-            <table className="tbl mt-1 [&_td]:!bg-transparent"><tbody>
-              {(d?.recent || []).slice(0, 5).map((r, i) => (
-                <tr key={i}><td className="!pl-0">{pairLabel(r.pair)}</td><td><span className={clsx('num text-[11px] font-semibold', r.direction === 'BUY' ? 'up' : 'down')}>{r.direction}</span></td><td className="text-dim">{timeAgo(r.closedAt)}</td><td className={clsx('r num !pr-0', r.resultPct >= 0 ? 'up' : 'down')}>{fmtPct(r.resultPct)}</td></tr>
-              ))}
-            </tbody></table>
-          </div>
-          <p className="text-[11px] text-dim mt-4 max-w-md">Demo rows are labelled as such in the app. Past results do not predict future performance.</p>
+            <p className="text-[11px] text-white/75 mt-4">Demo rows are labelled as such in the app. Past results do not predict future performance.</p>
+          </aside>
         </div>
-      </aside>
+        <p className="text-[11px] text-white/80 text-center lg:text-left">Trading involves risk. Signals are educational and not financial advice. <Link to="/terms" className="underline underline-offset-2 hover:text-white">Terms</Link> · <Link to="/privacy" className="underline underline-offset-2 hover:text-white">Privacy</Link> · <Link to="/risk" className="underline underline-offset-2 hover:text-white">Risk</Link></p>
+      </div>
     </div>
   );
 }

@@ -118,7 +118,7 @@ function AdRow({ a, i, err, set, remove }) {
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.2fr_1fr_auto]">
         <Field label="Placement"><select className="input" value={a.slot} onChange={(ev) => set({ slot: ev.target.value })} data-testid={`ad-slot-${i}`}>{SLOTS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
         <Field label="Type"><select className="input" value={a.type} onChange={(ev) => set({ type: ev.target.value })} data-testid={`ad-type-${i}`}>{TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}</select></Field>
-        <div className="flex items-end gap-2"><label className="flex items-center gap-2 text-sm h-10 px-1"><input type="checkbox" className="size-4 accent-[#1d5fe0]" checked={a.enabled} onChange={(ev) => set({ enabled: ev.target.checked })} />Enabled</label>
+        <div className="flex items-end gap-2"><label className="flex items-center gap-2 text-sm h-10 px-1"><input type="checkbox" className="size-4 accent-[#1a5ad7]" checked={a.enabled} onChange={(ev) => set({ enabled: ev.target.checked })} />Enabled</label>
           <button type="button" className="btn btn-ghost btn-icon" aria-label={`Remove ad ${i + 1}`} onClick={remove}><Trash2 size={15} /></button></div>
       </div>
 
