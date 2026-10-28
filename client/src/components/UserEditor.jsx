@@ -83,7 +83,7 @@ export function DeleteUser({ u, onClose, onDone }) {
   };
   return (
     <form onSubmit={submit} className="space-y-4" data-testid="delete-user-form">
-      <div className="flex gap-3 rounded-xl border border-down/25 bg-[#fff1f2] px-4 py-3 text-[13px] text-[#8f1d2c]">
+      <div className="flex gap-3 rounded-xl border border-down/25 bg-[#fff1f2] px-4 py-3 text-[0.9375rem] text-[#8f1d2c]">
         <AlertTriangle size={18} className="shrink-0 mt-0.5" />
         <p>This permanently deletes <b>{u.name}</b> ({u.email}) with their paper trades, orders, watchlist, sessions and 2FA codes. Their sign-in history and emails are kept for audit but anonymised. Signals they published stay. This cannot be undone.</p>
       </div>
@@ -124,10 +124,10 @@ export function UserDrawer({ userId, me, onClose, onChanged }) {
             className="glass glass-strong absolute flex flex-col inset-x-0 bottom-0 max-h-[92dvh] !rounded-b-none sm:inset-x-auto sm:right-3 sm:top-3 sm:bottom-3 sm:w-[520px] sm:max-h-none sm:!rounded-[24px]"
             initial={{ x: 40, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: 40, opacity: 0 }} transition={{ type: 'spring', stiffness: 380, damping: 36 }}>
             <header className="flex items-start gap-3 px-5 sm:px-6 pt-5 pb-4 border-b border-line">
-              <span className="size-12 rounded-2xl grid place-items-center text-[17px] font-bold text-white bg-[linear-gradient(135deg,#3b7bf0,#0f2a66)] shrink-0">{u?.name?.[0]?.toUpperCase() || <UserCog size={18} />}</span>
+              <span className="size-12 rounded-2xl grid place-items-center text-[1.125rem] font-bold text-white bg-[linear-gradient(135deg,#3b7bf0,#0f2a66)] shrink-0">{u?.name?.[0]?.toUpperCase() || <UserCog size={18} />}</span>
               <div className="min-w-0 flex-1">
                 <p className="label">Edit user</p>
-                {u ? <><h2 className="text-[1.15rem] font-semibold truncate">{u.name}</h2><p className="text-[12.5px] text-mute truncate">{u.email}</p>
+                {u ? <><h2 className="text-[1.15rem] font-semibold truncate">{u.name}</h2><p className="text-[0.9375rem] text-mute truncate">{u.email}</p>
                   <div className="flex flex-wrap gap-1.5 mt-2"><span className={clsx('badge', u.role === 'admin' ? 'badge-accent' : 'badge-neutral')}>{u.role}</span><span className={clsx('badge', u.status === 'active' ? 'badge-up' : 'badge-down')}>{u.status}</span><span className={clsx('badge', u.email_verified_at ? 'badge-up' : 'badge-warn')}>{u.email_verified_at ? 'verified' : 'unverified'}</span>{locked && <span className="badge badge-down">locked</span>}<span className="badge badge-neutral num">{fmtMoney(u.balance)}</span></div></>
                   : err ? <p className="text-down text-sm mt-1">{err}</p> : <Skeleton className="h-10 w-56 mt-1" />}
               </div>
@@ -150,9 +150,9 @@ export function UserDrawer({ userId, me, onClose, onChanged }) {
                   <section>
                     <h3 className="label mb-2">Recent sign-in activity</h3>
                     {activity.length ? <ul className="divide-y divide-[var(--color-line)] rounded-xl border border-line bg-white/50">{activity.map((a) => (
-                      <li key={a.id} className="flex items-center justify-between gap-3 px-3 py-2 text-[12.5px]"><span className="capitalize">{a.event.replaceAll('_', ' ')}</span><span className="text-mute num">{fmtDate(a.created_at, 'dd MMM, HH:mm')}</span><span className={clsx('badge', a.success ? 'badge-up' : 'badge-down')}>{a.success ? 'OK' : 'Failed'}</span></li>
-                    ))}</ul> : <p className="text-[12.5px] text-mute">No sign-ins recorded yet.</p>}
-                    <p className="text-[11.5px] text-dim mt-3">Registered {fmtDate(u.created_at, 'dd MMM yyyy')} · last login {u.last_login_at ? fmtDate(u.last_login_at, 'dd MMM yyyy, HH:mm') : 'never'} · {u.trades_count} paper trades</p>
+                      <li key={a.id} className="flex items-center justify-between gap-3 px-3 py-2 text-[0.9375rem]"><span className="capitalize">{a.event.replaceAll('_', ' ')}</span><span className="text-mute num">{fmtDate(a.created_at, 'dd MMM, HH:mm')}</span><span className={clsx('badge', a.success ? 'badge-up' : 'badge-down')}>{a.success ? 'OK' : 'Failed'}</span></li>
+                    ))}</ul> : <p className="text-[0.9375rem] text-mute">No sign-ins recorded yet.</p>}
+                    <p className="text-[0.875rem] text-dim mt-3">Registered {fmtDate(u.created_at, 'dd MMM yyyy')} · last login {u.last_login_at ? fmtDate(u.last_login_at, 'dd MMM yyyy, HH:mm') : 'never'} · {u.trades_count} paper trades</p>
                   </section>
                 )}
               </div>

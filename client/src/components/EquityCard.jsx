@@ -51,7 +51,7 @@ function AreaChart({ data, height = 150 }) {
       </svg>
       {h && (
         <div className="pointer-events-none absolute -translate-x-1/2 -translate-y-full" style={{ left: `${(h[0] / W) * 100}%`, top: (h[1] / H) * height - 10 }}>
-          <div className="rounded-lg bg-night text-white px-2.5 py-1.5 text-[11.5px] shadow-lg whitespace-nowrap"><span className="num font-semibold">{fmtMoney(data[hover].v)}</span><span className="text-white/70 ml-2">{fmtDate(data[hover].t, 'dd MMM, HH:mm')}</span></div>
+          <div className="rounded-lg bg-night text-white px-2.5 py-1.5 text-[0.875rem] shadow-lg whitespace-nowrap"><span className="num font-semibold">{fmtMoney(data[hover].v)}</span><span className="text-white/70 ml-2">{fmtDate(data[hover].t, 'dd MMM, HH:mm')}</span></div>
         </div>
       )}
       {h && <span className="pointer-events-none absolute size-3 -ml-1.5 -mt-1.5 rounded-full border-2 border-white shadow" style={{ left: `${(h[0] / W) * 100}%`, top: (h[1] / H) * height, background: col }} />}
@@ -66,23 +66,23 @@ export default function EquityCard({ portfolio: p, loading }) {
     <section className="glass p-5 sm:p-6 flex flex-col min-w-0" aria-label="Portfolio">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[13px] font-medium text-mute">Paper portfolio balance</p>
-          {loading && !p ? <Skeleton className="h-10 w-56 mt-2" /> : <p className="num text-[2rem] sm:text-[2.35rem] font-semibold tracking-[-0.04em] leading-tight mt-1">{fmtMoney(p?.equity)}</p>}
+          <p className="text-[0.9375rem] font-medium text-mute">Paper portfolio balance</p>
+          {loading && !p ? <Skeleton className="h-10 w-56 mt-2" /> : <p className="impact text-[2.6rem] sm:text-[3.1rem] mt-2">{fmtMoney(p?.equity)}</p>}
           {p && (
             <div className="flex flex-wrap items-center gap-2 mt-2">
               <span className={clsx('badge', total >= 0 ? 'badge-up' : 'badge-down')}>{total >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}{fmtPct(pct)}</span>
-              <span className="text-[12px] text-mute num">{fmtSigned(total)} USD since start</span>
+              <span className="text-[0.875rem] text-mute num">{fmtSigned(total)} USD since start</span>
             </div>
           )}
         </div>
         <Link to="/app/trade" className="btn btn-primary btn-sm shrink-0">Trade<ArrowUpRight size={14} /></Link>
       </div>
       <div className="mt-4 -mx-1 flex-1 min-h-[150px] relative">{series.length > 1 ? <AreaChart data={series} /> : <Skeleton className="h-[150px]" />}
-        {p && series.length > 1 && series.length < 3 && !p.closedCount && <p className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center text-[12.5px] text-mute pointer-events-none"><span className="glass !rounded-full px-3 py-1.5 inline-block">Your equity curve starts with your first closed paper trade</span></p>}
+        {p && series.length > 1 && series.length < 3 && !p.closedCount && <p className="absolute inset-x-0 top-1/2 -translate-y-1/2 text-center text-[0.9375rem] text-mute pointer-events-none"><span className="glass !rounded-full px-3 py-1.5 inline-block">Your equity curve starts with your first closed paper trade</span></p>}
       </div>
       <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-3 mt-4 pt-4 border-t border-line">
         {[['Cash', fmtMoney(p?.balance), ''], ['Unrealised P&L', fmtSigned(p?.unrealized), p?.unrealized > 0 ? 'up' : p?.unrealized < 0 ? 'down' : ''], ['Realised P&L', fmtSigned(p?.realized), p?.realized > 0 ? 'up' : p?.realized < 0 ? 'down' : ''], ['Open / pending', p ? `${p.open.length} / ${p.pending.length}` : '--', '']].map(([k, v, t]) => (
-          <div key={k} className="min-w-0"><dt className="text-[11.5px] text-mute">{k}</dt><dd className={clsx('num text-[14px] font-medium mt-0.5 truncate', t)}>{v}</dd></div>
+          <div key={k} className="min-w-0"><dt className="text-[0.875rem] text-mute">{k}</dt><dd className={clsx('num text-[1rem] font-medium mt-0.5 truncate', t)}>{v}</dd></div>
         ))}
       </dl>
     </section>

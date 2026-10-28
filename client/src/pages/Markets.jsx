@@ -37,7 +37,7 @@ export default function Markets() {
             <tbody>{rows.map((x) => (
               <tr key={x.symbol}>
                 <td><button onClick={() => star(x.symbol)} aria-label={watch.includes(x.symbol) ? 'Remove from watchlist' : 'Add to watchlist'} className="p-1"><Star size={15} className={clsx(watch.includes(x.symbol) ? 'fill-warn text-warn' : 'text-dim hover:text-mute')} /></button></td>
-                <td><div className="flex items-center gap-2"><div><div className="font-medium">{pairLabel(x.symbol)}</div><div className="text-[11px] text-mute">{x.name}</div></div>{x.source === 'simulated' && <SimTag />}</div></td>
+                <td><div className="flex items-center gap-2"><div><div className="font-medium">{pairLabel(x.symbol)}</div><div className="text-[0.8125rem] text-mute">{x.name}</div></div>{x.source === 'simulated' && <SimTag />}</div></td>
                 <td className="r"><Price value={x.price} decimals={x.decimals} /></td>
                 <td className="r"><Change pct={x.changePct} /></td>
                 <td className="r num text-mute hidden md:table-cell">{fmtPrice(x.high, x.decimals)}</td>

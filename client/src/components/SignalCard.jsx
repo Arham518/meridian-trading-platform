@@ -8,7 +8,7 @@ import { useMarket } from '../store/market.js';
 
 const Level = ({ label, value, tone, dec }) => (
   <div className="min-w-0 rounded-xl bg-white/55 border border-white/70 px-3 py-2">
-    <div className="text-[11px] text-mute truncate">{label}</div>
+    <div className="text-[0.8125rem] text-mute truncate">{label}</div>
     <div className={clsx('num text-[0.95rem] font-semibold mt-0.5 truncate', tone)}>{value == null ? '--' : fmtPrice(value, dec)}</div>
   </div>
 );
@@ -24,7 +24,7 @@ function Progress({ s }) {
   const pl = ((q.price - s.entry) / s.entry) * 100 * (buy ? 1 : -1);
   return (
     <div className="mt-3.5">
-      <div className="flex items-center justify-between text-[11px] mb-1.5">
+      <div className="flex items-center justify-between text-[0.8125rem] mb-1.5">
         <span className="text-mute">Live <b className="num text-ink font-medium">{fmtPrice(q.price, q.decimals)}</b></span>
         <span className={clsx('num', pl >= 0 ? 'up' : 'down')}>{fmtPct(pl)} vs entry</span>
       </div>
@@ -33,7 +33,7 @@ function Progress({ s }) {
         <span className="absolute inset-y-0 right-0 bg-up/45" style={{ left: `${entryPos}%` }} />
         <motion.span className="absolute top-0 w-[3px] h-full -ml-px bg-ink rounded" animate={{ left: `${pos}%` }} transition={{ duration: 0.6, ease: 'easeOut' }} />
       </div>
-      <div className="flex justify-between text-[10px] text-dim mt-1.5 num"><span>SL</span><span>TP1</span></div>
+      <div className="flex justify-between text-[0.75rem] text-dim mt-1.5 num"><span>SL</span><span>TP1</span></div>
     </div>
   );
 }
@@ -53,12 +53,12 @@ export default memo(function SignalCard({ s, actions, onImage, fresh = false }) 
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="font-semibold text-[1.05rem] tracking-[-0.02em] truncate">{pairLabel(s.pair)}</h3><DirBadge dir={s.direction} />{s.isDemo && <span className="badge badge-neutral">Demo</span>}
           </div>
-          <div className="flex items-center gap-2 text-[11.5px] text-mute mt-1"><span className="num">{s.timeframe}</span><span aria-hidden>/</span><span className="inline-flex items-center gap-1"><Clock size={11} />{timeAgo(s.createdAt)}</span><span aria-hidden>/</span><RiskBadge risk={s.risk} /></div>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[0.875rem] text-mute mt-1"><span className="num">{s.timeframe}</span><span aria-hidden>/</span><span className="inline-flex items-center gap-1"><Clock size={11} />{timeAgo(s.createdAt)}</span><span aria-hidden>/</span><RiskBadge risk={s.risk} /></div>
         </div>
         <div className="flex flex-col items-end gap-1 shrink-0">
           <StatusBadge status={s.status} />
           {done && s.resultPct != null && <span className={clsx('num text-sm font-medium', s.resultPct >= 0 ? 'up' : 'down')}>{fmtPct(s.resultPct)}</span>}
-          {done && s.resultPips != null && <span className="num text-[11px] text-mute">{s.resultPips > 0 ? '+' : ''}{s.resultPips} pips</span>}
+          {done && s.resultPips != null && <span className="num text-[0.8125rem] text-mute">{s.resultPips > 0 ? '+' : ''}{s.resultPips} pips</span>}
         </div>
       </div>
 

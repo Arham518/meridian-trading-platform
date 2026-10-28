@@ -8,7 +8,7 @@ const Item = memo(function Item({ symbol, to }) {
   const q = useMarket((s) => s.quotes[symbol]);
   if (!q) return null;
   return (
-    <Link to={to} tabIndex={-1} className="flex items-center gap-2.5 px-5 h-full border-r border-line/60 text-[12.5px] hover:bg-ink/[0.03] transition-colors">
+    <Link to={to} tabIndex={-1} className="flex items-center gap-2.5 px-5 h-full border-r border-line/60 text-[0.9375rem] hover:bg-ink/[0.03] transition-colors">
       <span className="font-semibold tracking-tight text-ink">{pairLabel(symbol)}</span>
       <Price value={q.price} decimals={q.decimals} className="text-ink" />
       <Change pct={q.changePct} />

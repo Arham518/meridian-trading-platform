@@ -45,10 +45,10 @@ export function Login() {
     <AuthLayout title="Sign in" subtitle="Dashboard, signals desk and your paper account." footer={<>No account yet? <Link to="/register" className="link">Register</Link></>}>
       <form onSubmit={submit} className="space-y-4" noValidate>
         <Field label="Email or username"><input className="input" autoComplete="username" autoFocus value={f.identifier} onChange={(e) => setF({ ...f, identifier: e.target.value })} placeholder="you@example.com" required /></Field>
-        <Field label={<span className="flex justify-between normal-case tracking-normal"><span className="label">Password</span><Link to="/forgot-password" className="text-[12px] text-mute hover:text-ink" tabIndex={-1}>Forgot password?</Link></span>}>
+        <Field label={<span className="flex justify-between normal-case tracking-normal"><span className="label">Password</span><Link to="/forgot-password" className="text-[0.875rem] text-mute hover:text-ink" tabIndex={-1}>Forgot password?</Link></span>}>
           <PasswordField value={f.password} onChange={(e) => setF({ ...f, password: e.target.value })} autoComplete="current-password" />
         </Field>
-        <label className="flex items-center gap-2 text-[13px] text-mute cursor-pointer select-none"><input type="checkbox" className="accent-[#1a5ad7] size-3.5" checked={f.remember} onChange={(e) => setF({ ...f, remember: e.target.checked })} />Keep me signed in for 30 days</label>
+        <label className="flex items-center gap-2 text-[0.9375rem] text-mute cursor-pointer select-none"><input type="checkbox" className="accent-[#1a5ad7] size-3.5" checked={f.remember} onChange={(e) => setF({ ...f, remember: e.target.checked })} />Keep me signed in for 30 days</label>
         <FormError>{locked > 0 ? `Too many failed attempts. Try again in ${locked >= 90 ? `${Math.ceil(locked / 60)} minutes` : `${locked}s`}.` : err}</FormError>
         <button className="btn btn-primary w-full !h-11" disabled={busy || locked > 0 || !f.identifier || !f.password}>{busy ? <Spinner /> : 'Sign in'}</button>
       </form>
@@ -88,14 +88,14 @@ export function Register() {
         <Field label="Confirm password" error={fe.confirmPassword || (mismatch ? 'Passwords do not match' : '')}><PasswordField value={f.confirmPassword} onChange={set('confirmPassword')} autoComplete="new-password" placeholder="Repeat password" invalid={!!mismatch} /></Field>
         <FormError>{err}</FormError>
         <div>
-          <label className="flex items-start gap-2.5 text-[13px] text-mute cursor-pointer select-none">
+          <label className="flex items-start gap-2.5 text-[0.9375rem] text-mute cursor-pointer select-none">
             <input type="checkbox" className="accent-[#1a5ad7] size-4 mt-0.5 shrink-0" checked={f.acceptTerms} onChange={(e) => { setF((p) => ({ ...p, acceptTerms: e.target.checked })); setFe((x) => ({ ...x, acceptTerms: undefined })); }} aria-invalid={fe.acceptTerms ? 'true' : undefined} data-testid="accept-terms" required />
             <span>I agree to the <Link to="/terms" target="_blank" className="link">Terms of Service</Link> and <Link to="/privacy" target="_blank" className="link">Privacy Policy</Link>, and I have read the <Link to="/risk" target="_blank" className="link">Risk Disclosure</Link>.</span>
           </label>
           {fe.acceptTerms && <span className="text-xs text-down mt-1.5 block" role="alert">{fe.acceptTerms}</span>}
         </div>
         <button className="btn btn-primary w-full !h-11" disabled={busy || !f.name || !f.email || !f.password || !f.confirmPassword || !f.acceptTerms}>{busy ? <Spinner /> : 'Create account'}</button>
-        <p className="text-[11px] text-dim">Signals are educational and trading involves risk. Paper trading uses virtual money.</p>
+        <p className="text-[0.8125rem] text-dim">Signals are educational and trading involves risk. Paper trading uses virtual money.</p>
       </form>
     </AuthLayout>
   );

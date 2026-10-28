@@ -34,12 +34,12 @@ function AssetTiles({ onSelect }) {
         <button key={q.symbol} onClick={() => onSelect(q.symbol)} className={`${TINTS[i % 4]} [&_.down]:!text-[#9c1426] [&_.up]:!text-[#055c37] snap-start shrink-0 w-[62%] min-[480px]:w-[44%] sm:w-auto relative overflow-hidden rounded-2xl border border-white/80 p-4 text-left shadow-[var(--shadow-card)] transition-transform hover:-translate-y-0.5 focus-visible:-translate-y-0.5`}>
           <span aria-hidden className="absolute -right-8 -top-8 size-24 rounded-full bg-white/50 blur-xl" />
           <div className="relative flex items-center justify-between gap-2">
-            <span className="text-[13px] font-semibold text-ink truncate">{pairLabel(q.symbol)}</span>
+            <span className="text-[0.9375rem] font-semibold text-ink truncate">{pairLabel(q.symbol)}</span>
             <AssetIcon symbol={q.symbol} type={q.type} size="size-8" />
           </div>
           <Price value={q.price} decimals={q.decimals} className="relative block text-[1.2rem] sm:text-[1.3rem] font-semibold tracking-[-0.03em] mt-3 text-ink" />
           <div className="relative flex items-end justify-between gap-2 mt-2">
-            <Change pct={q.changePct} className="text-[12px] font-semibold" />
+            <Change pct={q.changePct} className="text-[0.875rem] font-semibold" />
             <Sparkline data={spark[q.symbol]} width={70} height={24} up={q.changePct >= 0} />
           </div>
         </button>
@@ -60,7 +60,7 @@ function PromoCard() {
       <div className="relative">
         <span className="badge badge-accent"><Sparkles size={12} />Paper account</span>
         <h3 className="text-[1.45rem] font-semibold tracking-[-0.03em] leading-tight mt-3 max-w-[15rem]">Practise every signal with 100,000 USD of virtual capital.</h3>
-        <p className="text-[13px] text-mute mt-2 max-w-[17rem]">Market and limit orders, stop loss and take profit, no real money at risk.</p>
+        <p className="text-[0.9375rem] text-mute mt-2 max-w-[17rem]">Market and limit orders, stop loss and take profit, no real money at risk.</p>
       </div>
       <Link to="/app/trade" className="btn btn-light !rounded-full self-start mt-5 relative">Start paper trading<ArrowRight size={14} /></Link>
     </section>
@@ -88,14 +88,14 @@ export default function Dashboard() {
         actions={<>{stats.data?.winRate != null && <span className="badge badge-neutral !h-9 !px-3.5 !rounded-full">Signal win rate <b className="num text-ink ml-1">{stats.data.winRate}%</b></span>}<Link to="/app/trade" className="btn btn-primary !rounded-full">Paper trading<ArrowRight size={14} /></Link></>} /></div>
 
       {/* portfolio + assets */}
-      <div className="grid xl:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] gap-4 sm:gap-5 items-stretch">
+      <div className="grid 2xl:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] gap-4 sm:gap-5 items-stretch">
         <div className="hidden md:flex min-w-0 [&>section]:flex-1"><EquityCard portfolio={p} loading={pf.loading} /></div>
         <div className="flex flex-col gap-3 min-w-0">
-          <div className="hidden md:contents"><div className="flex items-center justify-between"><h2 className="text-[1.05rem] font-semibold tracking-[-0.02em]">Your assets</h2><Link to="/app/markets" className="link text-[12.5px]">Edit watchlist</Link></div>
+          <div className="hidden md:contents"><div className="flex items-center justify-between"><h2 className="text-[1.05rem] font-semibold tracking-[-0.02em]">Your assets</h2><Link to="/app/markets" className="link text-[0.9375rem]">Edit watchlist</Link></div>
           <AssetTiles onSelect={pick} /></div>
           <div className="grid sm:grid-cols-2 gap-3 flex-1">
             <Card title="Active signals" actions={<Link to="/app/signals" className="btn btn-ghost btn-sm">All</Link>} pad={false}>
-              {!verified ? <p className="px-4 py-5 text-[13px] text-mute">The signals desk opens once your email is confirmed.</p> :
+              {!verified ? <p className="px-4 py-5 text-[0.9375rem] text-mute">The signals desk opens once your email is confirmed.</p> :
                 sigs.loading && !sigs.data ? <div className="p-3"><Skeleton className="h-24" /></div> : sigs.error && !sigs.data ? <ErrorState message={sigs.error} onRetry={sigs.reload} /> :
                   sigs.data.rows.length ? <SignalRows rows={sigs.data.rows.slice(0, 3)} /> : <EmptyState icon={Radio} title="No active signals" hint="New signals appear here the moment the desk publishes them." />}
             </Card>
@@ -105,7 +105,7 @@ export default function Dashboard() {
       </div>
 
       {/* market table + promo */}
-      <div className="grid xl:grid-cols-[minmax(0,1fr)_340px] gap-4 sm:gap-5 items-stretch">
+      <div className="grid xl:grid-cols-[minmax(0,1fr)_21rem] gap-4 sm:gap-5 items-stretch">
         <MarketTable onSelect={pick} limit={8} />
         <div className="grid gap-4 sm:gap-5 content-start">
           <PromoCard />
@@ -113,7 +113,7 @@ export default function Dashboard() {
       </div>
 
       {/* terminal */}
-      <div className="grid xl:grid-cols-[minmax(0,1fr)_340px] gap-4 sm:gap-5 items-start">
+      <div className="grid xl:grid-cols-[minmax(0,1fr)_21rem] gap-4 sm:gap-5 items-start">
         <div className="min-w-0 space-y-4 sm:space-y-5">
           <Card pad={false} className="min-h-[460px] sm:min-h-[520px] overflow-hidden"><PriceChart symbol={symbol} onSymbolChange={pick} className="h-full min-h-[460px] sm:min-h-[520px]" /></Card>
           <Card pad={false} title="Open positions and orders" subtitle="Paper trading, simulated virtual money" actions={<Link to="/app/records" className="btn btn-ghost btn-sm">Trade history</Link>}>

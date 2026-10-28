@@ -9,7 +9,7 @@ export default function CurveChart({ data = [], height = 180 }) {
     if (!el.current || data.length < 2) return undefined;
     const chart = createChart(el.current, {
       autoSize: true, height,
-      layout: { background: { type: ColorType.Solid, color: 'transparent' }, textColor: C.mute, fontFamily: '"Geist Mono Variable", monospace', fontSize: 11 },
+      layout: { background: { type: ColorType.Solid, color: 'transparent' }, textColor: C.mute, fontFamily: '"Geist Mono Variable", monospace', fontSize: 12 },
       grid: { vertLines: { visible: false }, horzLines: { color: C.grid } },
       rightPriceScale: { borderVisible: false }, timeScale: { borderVisible: false, timeVisible: true, secondsVisible: false },
       handleScroll: false, handleScale: false, crosshair: { vertLine: { color: C.cross }, horzLine: { visible: false } },

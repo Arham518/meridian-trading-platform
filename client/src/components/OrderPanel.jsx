@@ -44,14 +44,14 @@ export default function OrderPanel({ symbol, balance, onPlaced }) {
       <div className="grid grid-cols-2 gap-1 p-1 rounded-md bg-bg border border-line" role="tablist" aria-label="Order side">
         {['BUY', 'SELL'].map((s) => (
           <button key={s} type="button" role="tab" aria-selected={side === s} onClick={() => setSide(s)}
-            className={clsx('h-8 rounded-lg text-[13px] font-semibold transition-colors', side === s ? (s === 'BUY' ? 'bg-up text-white' : 'bg-down text-white') : 'text-mute hover:text-ink')}>{s === 'BUY' ? 'Buy / Long' : 'Sell / Short'}</button>
+            className={clsx('h-8 rounded-lg text-[0.9375rem] font-semibold transition-colors', side === s ? (s === 'BUY' ? 'bg-up text-white' : 'bg-down text-white') : 'text-mute hover:text-ink')}>{s === 'BUY' ? 'Buy / Long' : 'Sell / Short'}</button>
         ))}
       </div>
       <div className="flex items-center justify-between">
         <div className="inline-flex gap-1" role="tablist" aria-label="Order type">
           {['market', 'limit'].map((t) => <button key={t} type="button" role="tab" aria-selected={type === t} className="tab capitalize" onClick={() => setType(t)}>{t}</button>)}
         </div>
-        <div className="text-right"><div className="label !text-[10px]">Market price {q?.source === 'simulated' && <SimTag />}</div><div className="num text-sm">{q ? fmtPrice(q.price, dec) : '—'}</div></div>
+        <div className="text-right"><div className="label !text-[0.75rem]">Market price {q?.source === 'simulated' && <SimTag />}</div><div className="num text-sm">{q ? fmtPrice(q.price, dec) : '—'}</div></div>
       </div>
       {type === 'limit' && <Field label="Limit price (USD)"><input className="input num" inputMode="decimal" type="number" step="any" min="0" placeholder={q ? fmtPrice(q.price, dec) : ''} value={limit} onChange={(e) => setLimit(e.target.value)} /></Field>}
       <Field label={`Quantity (${pairLabel(symbol).split('/')[0]})`}>
@@ -70,7 +70,7 @@ export default function OrderPanel({ symbol, balance, onPlaced }) {
       <button className={clsx('btn w-full !h-11 text-[0.9375rem]', side === 'BUY' ? 'btn-up' : 'btn-down')} disabled={busy || !q}>
         {busy ? <Spinner /> : `${side === 'BUY' ? 'Buy' : 'Sell'} ${pairLabel(symbol)}`}
       </button>
-      <p className="text-[11px] text-dim text-center">Paper trading only — virtual money, no real orders.</p>
+      <p className="text-[0.8125rem] text-dim text-center">Paper trading only — virtual money, no real orders.</p>
     </form>
   );
 }

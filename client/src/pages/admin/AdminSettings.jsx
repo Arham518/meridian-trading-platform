@@ -71,8 +71,8 @@ function HeroVideoCard({ value, onChange }) {
               <button type="button" className="btn btn-primary shrink-0" onClick={saveUrl} disabled={!!busy || !url.trim()} data-testid="hero-video-save">{busy === 'url' ? <Spinner /> : <Link2 size={14} />}Use link</button></div>
           </Field>
           <div className="rounded-xl border border-dashed border-line-2 bg-white/40 p-4">
-            <p className="text-[13px] font-medium">Or upload a file</p>
-            <p className="text-[12px] text-mute mt-1">MP4 (H.264), WebM or MOV, up to 25 MB. Short loops of 10–20 seconds at 1280×720 work best.</p>
+            <p className="text-[0.9375rem] font-medium">Or upload a file</p>
+            <p className="text-[0.875rem] text-mute mt-1">MP4 (H.264), WebM or MOV, up to 25 MB. Short loops of 10–20 seconds at 1280×720 work best.</p>
             <input ref={file} type="file" accept="video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov" className="hidden" onChange={upload} data-testid="hero-video-file" />
             <div className="flex flex-wrap gap-2 mt-3">
               <button type="button" className="btn btn-ghost btn-sm" onClick={() => file.current?.click()} disabled={!!busy}>{busy.startsWith('Uploading') ? <><Spinner />{busy}</> : <><Upload size={14} />Choose video</>}</button>
@@ -84,11 +84,11 @@ function HeroVideoCard({ value, onChange }) {
           <p className="label mb-2">Live preview</p>
           {current ? (
             <>
-              {failed ? <div className="aspect-video rounded-xl grid place-items-center text-center p-5 bg-[#fff1f2] text-[#8f1d2c] text-[13px] border border-down/25"><div><AlertTriangle className="mx-auto mb-2" size={20} />This link does not play as a video. Use a direct .mp4 / .webm file or a YouTube / Vimeo link. Visitors see the market widgets instead.</div></div>
+              {failed ? <div className="aspect-video rounded-xl grid place-items-center text-center p-5 bg-[#fff1f2] text-[#8f1d2c] text-[0.9375rem] border border-down/25"><div><AlertTriangle className="mx-auto mb-2" size={20} />This link does not play as a video. Use a direct .mp4 / .webm file or a YouTube / Vimeo link. Visitors see the market widgets instead.</div></div>
                 : <HeroMedia key={current.src} video={current} onFail={() => setFailed(true)} className="rounded-xl border border-line" />}
-              <p className="text-[12px] text-mute mt-2 break-all flex gap-1.5"><CheckCircle2 size={14} className={clsx('shrink-0 mt-px', failed ? 'text-down' : 'text-up')} />{current.kind === 'file' ? value : `${current.kind === 'youtube' ? 'YouTube' : 'Vimeo'} embed`}</p>
+              <p className="text-[0.875rem] text-mute mt-2 break-all flex gap-1.5"><CheckCircle2 size={14} className={clsx('shrink-0 mt-px', failed ? 'text-down' : 'text-up')} />{current.kind === 'file' ? value : `${current.kind === 'youtube' ? 'YouTube' : 'Vimeo'} embed`}</p>
             </>
-          ) : <div className="aspect-video rounded-xl grid place-items-center bg-ink/[0.04] border border-line text-mute text-[13px]"><div className="text-center"><Film className="mx-auto mb-2" size={20} />No video. The home page shows live market widgets.</div></div>}
+          ) : <div className="aspect-video rounded-xl grid place-items-center bg-ink/[0.04] border border-line text-mute text-[0.9375rem]"><div className="text-center"><Film className="mx-auto mb-2" size={20} />No video. The home page shows live market widgets.</div></div>}
         </div>
       </div>
     </Card>
@@ -112,7 +112,7 @@ function AdRow({ a, i, err, set, remove }) {
     set({ ...(client && { adClient: client }), ...(slot && { adSlot: slot }) }); toast.success('AdSense ids read from the code.');
   };
   const inv = (k) => clsx('input', e(k) && '!border-down');
-  const msg = (k) => e(k) && <span className="block text-[11.5px] text-down mt-1" role="alert">{e(k)}</span>;
+  const msg = (k) => e(k) && <span className="block text-[0.875rem] text-down mt-1" role="alert">{e(k)}</span>;
   return (
     <div className={clsx('glass p-4 sm:p-5 !rounded-xl', !a.enabled && 'opacity-75')} data-testid={`ad-row-${i}`}>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.2fr_1fr_auto]">
@@ -124,7 +124,7 @@ function AdRow({ a, i, err, set, remove }) {
 
       {a.type === 'adsense' ? (
         <div className="grid gap-3 sm:grid-cols-2 mt-3">
-          <Field label="Paste the AdSense ad unit code" hint="We read the publisher id and slot id; the script itself is loaded by the site."><textarea className="input !h-20 !py-2 font-mono text-[12px]" placeholder={'<ins class="adsbygoogle" data-ad-client="ca-pub-…" data-ad-slot="…">'} onBlur={(ev) => ev.target.value.trim() && paste(ev.target.value)} /></Field>
+          <Field label="Paste the AdSense ad unit code" hint="We read the publisher id and slot id; the script itself is loaded by the site."><textarea className="input !h-20 !py-2 font-mono text-[0.875rem]" placeholder={'<ins class="adsbygoogle" data-ad-client="ca-pub-…" data-ad-slot="…">'} onBlur={(ev) => ev.target.value.trim() && paste(ev.target.value)} /></Field>
           <div className="grid gap-3">
             <label className="block"><span className="label block mb-1.5">Publisher id</span><input className={inv('adClient')} value={a.adClient} onChange={(ev) => set({ adClient: ev.target.value.trim() })} placeholder="ca-pub-1234567890123456" data-testid={`ad-client-${i}`} />{msg('adClient')}</label>
             <label className="block"><span className="label block mb-1.5">Ad slot id</span><input className={inv('adSlot')} value={a.adSlot} onChange={(ev) => set({ adSlot: ev.target.value.trim() })} placeholder="1234567890" inputMode="numeric" data-testid={`ad-adslot-${i}`} />{msg('adSlot')}</label>

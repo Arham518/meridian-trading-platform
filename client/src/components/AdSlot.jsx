@@ -40,7 +40,7 @@ function AdsenseUnit({ ad, layout }) {
   );
 }
 
-const Label = () => <span className="label !text-[10px] !tracking-[0.08em] !text-dim">Advertisement</span>;
+const Label = () => <span className="label !text-[0.75rem] !tracking-[0.08em] !text-dim">Advertisement</span>;
 
 /** One ad. layout: 'banner' (wide strip), 'box' (sidebar card), 'card' (inside a feed). */
 export function Ad({ ad, layout = 'banner', className = '', preview = false }) {
@@ -59,10 +59,10 @@ export function Ad({ ad, layout = 'banner', className = '', preview = false }) {
         <a href={ad.url} target="_blank" rel="sponsored noopener noreferrer" className="group block relative">
           <img src={ad.image} alt={ad.title || 'Advertisement'} loading="lazy" decoding="async"
             className={clsx('w-full object-cover transition-transform duration-500 group-hover:scale-[1.015]', layout === 'banner' ? 'aspect-[4/1] sm:aspect-[6/1] lg:aspect-[8/1]' : 'h-auto max-h-[300px]')} />
-          <span className="absolute left-2 top-2 rounded-md bg-white/90 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#475467]">Ad</span>
+          <span className="absolute left-2 top-2 rounded-md bg-white/90 px-1.5 py-0.5 text-[0.75rem] font-semibold uppercase tracking-[0.08em] text-[#475467]">Ad</span>
         </a>
         {(ad.title || ad.text) && layout !== 'banner' && (
-          <div className="p-3.5 flex items-center gap-3"><div className="min-w-0 flex-1"><p className="text-[13.5px] font-semibold truncate">{ad.title}</p>{ad.text && <p className="text-[12px] text-mute truncate">{ad.text}</p>}</div>
+          <div className="p-3.5 flex items-center gap-3"><div className="min-w-0 flex-1"><p className="text-[1rem] font-semibold truncate">{ad.title}</p>{ad.text && <p className="text-[0.875rem] text-mute truncate">{ad.text}</p>}</div>
             <a href={ad.url} target="_blank" rel="sponsored noopener noreferrer" className="btn btn-ghost btn-sm shrink-0">{ad.cta}<ArrowUpRight size={13} /></a></div>
         )}
       </aside>
@@ -72,7 +72,7 @@ export function Ad({ ad, layout = 'banner', className = '', preview = false }) {
     <aside aria-label="Advertisement" data-testid={tid} data-ad-type="link"
       className={clsx('glass', layout === 'banner' ? 'px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-x-5 gap-y-1.5' : 'p-4 flex flex-col gap-3', className)}>
       <Label />
-      <div className="min-w-0 flex-1"><p className="text-[14px] font-semibold">{ad.title}</p>{ad.text && <p className="text-[12.5px] text-mute mt-0.5">{ad.text}</p>}</div>
+      <div className="min-w-0 flex-1"><p className="text-[1rem] font-semibold">{ad.title}</p>{ad.text && <p className="text-[0.9375rem] text-mute mt-0.5">{ad.text}</p>}</div>
       <a href={ad.url} target="_blank" rel="sponsored noopener noreferrer" className="btn btn-ghost btn-sm shrink-0 self-start sm:self-auto">{ad.cta}<ArrowUpRight size={13} /></a>
     </aside>
   );

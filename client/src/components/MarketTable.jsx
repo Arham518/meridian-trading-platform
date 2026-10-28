@@ -16,7 +16,7 @@ const ICON_BG = { crypto: 'bg-cream text-[#7a4a00]', forex: 'bg-sky text-[#1747b
 
 export function AssetIcon({ symbol, type, size = 'size-9' }) {
   const t = pairLabel(symbol).replace('/USDT', '').replace('/', '').slice(0, 3);
-  return <span className={clsx(size, 'rounded-xl grid place-items-center text-[11px] font-bold tracking-tight shrink-0', ICON_BG[type] || 'bg-raise text-ink')} aria-hidden>{t}</span>;
+  return <span className={clsx(size, 'rounded-xl grid place-items-center text-[0.8125rem] font-bold tracking-tight shrink-0', ICON_BG[type] || 'bg-raise text-ink')} aria-hidden>{t}</span>;
 }
 
 /** Market table: price, 24h change, 24h trend and a watch star. A row click selects the symbol (onSelect). */
@@ -38,7 +38,7 @@ export default function MarketTable({ onSelect, limit = 10 }) {
       <header className="flex flex-wrap items-center justify-between gap-3 px-4 sm:px-5 pt-4 pb-3">
         <h2 className="text-[1.05rem] font-semibold tracking-[-0.02em]">Market is {avg >= 0 ? 'up' : 'down'} <span className={avg >= 0 ? 'up' : 'down'}>{Math.abs(avg).toFixed(2)}%</span></h2>
         <div className="flex items-center gap-2">
-          <select className="input !h-8 !w-auto !text-[12px] !rounded-lg" value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort markets"><option value="default">Default order</option><option value="gainers">Top gainers</option><option value="losers">Top losers</option></select>
+          <select className="input !h-8 !w-auto !text-[0.875rem] !rounded-lg" value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort markets"><option value="default">Default order</option><option value="gainers">Top gainers</option><option value="losers">Top losers</option></select>
         </div>
       </header>
       <div className="px-4 sm:px-5 pb-2 overflow-x-auto"><Segmented size="sm" ariaLabel="Asset class" value={type} onChange={setType} options={TYPES} /></div>
@@ -51,9 +51,9 @@ export default function MarketTable({ onSelect, limit = 10 }) {
                 const on = watch.includes(q.symbol);
                 return (
                   <tr key={q.symbol} className="cursor-pointer" onClick={() => onSelect?.(q.symbol)}>
-                    <td className="!pl-4 sm:!pl-5"><div className="flex items-center gap-2.5 sm:gap-3 min-w-0"><AssetIcon symbol={q.symbol} type={q.type} /><div className="min-w-0"><Link to={`/app/trade/${q.symbol}`} onClick={(e) => e.stopPropagation()} className="font-semibold text-[13.5px] hover:text-accent-2 flex items-center gap-1.5">{pairLabel(q.symbol)}{q.source === 'simulated' && <span className="hidden sm:inline"><SimTag /></span>}</Link><div className="text-[11.5px] text-mute truncate max-w-[110px] sm:max-w-[160px]">{q.name}</div></div></div></td>
-                    <td className="r"><Price value={q.price} decimals={q.decimals} className="text-[13px] font-medium block" /><Change pct={q.changePct} className="text-[11.5px] font-medium sm:hidden" /></td>
-                    <td className="r hidden sm:table-cell"><Change pct={q.changePct} className="text-[12.5px] font-medium" /></td>
+                    <td className="!pl-4 sm:!pl-5"><div className="flex items-center gap-2.5 sm:gap-3 min-w-0"><AssetIcon symbol={q.symbol} type={q.type} /><div className="min-w-0"><Link to={`/app/trade/${q.symbol}`} onClick={(e) => e.stopPropagation()} className="font-semibold text-[1rem] hover:text-accent-2 flex items-center gap-1.5">{pairLabel(q.symbol)}{q.source === 'simulated' && <span className="hidden sm:inline"><SimTag /></span>}</Link><div className="text-[0.875rem] text-mute truncate max-w-[110px] sm:max-w-[160px]">{q.name}</div></div></div></td>
+                    <td className="r"><Price value={q.price} decimals={q.decimals} className="text-[0.9375rem] font-medium block" /><Change pct={q.changePct} className="text-[0.875rem] font-medium sm:hidden" /></td>
+                    <td className="r hidden sm:table-cell"><Change pct={q.changePct} className="text-[0.9375rem] font-medium" /></td>
                     <td className="r hidden md:table-cell"><div className="inline-block"><Sparkline data={spark[q.symbol]} width={88} height={26} up={q.changePct >= 0} /></div></td>
                     <td className="r !pr-3 sm:!pr-5"><button onClick={(e) => star(e, q.symbol)} className={clsx('p-1.5 rounded-lg hover:bg-ink/[0.05]', on ? 'text-[#d99a0b]' : 'text-dim')} aria-pressed={on} aria-label={on ? `Remove ${pairLabel(q.symbol)} from watchlist` : `Add ${pairLabel(q.symbol)} to watchlist`}><Star size={16} className={on ? 'fill-current' : ''} /></button></td>
                   </tr>
@@ -63,7 +63,7 @@ export default function MarketTable({ onSelect, limit = 10 }) {
           </table>
         </div>
       )}
-      <div className="px-5 py-3 border-t border-line mt-auto"><Link to="/app/markets" className="link text-[12.5px]">All markets</Link></div>
+      <div className="px-5 py-3 border-t border-line mt-auto"><Link to="/app/markets" className="link text-[0.9375rem]">All markets</Link></div>
     </section>
   );
 }

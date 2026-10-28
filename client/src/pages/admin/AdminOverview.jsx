@@ -28,9 +28,9 @@ function Stat({ label, value, sub, icon: Icon, tint, loading }) {
   return (
     <div className={clsx('relative overflow-hidden rounded-[22px] border border-white/80 p-4 sm:p-5 shadow-[var(--shadow-card)] min-w-0', tint)}>
       <span aria-hidden className="absolute -right-8 -top-8 size-24 rounded-full bg-white/55 blur-xl" />
-      <div className="relative flex items-center justify-between gap-2"><span className="text-[12.5px] font-semibold text-ink/80 truncate">{label}</span><span className="size-8 rounded-xl bg-white/80 grid place-items-center text-ink shrink-0"><Icon size={15} /></span></div>
-      {loading ? <Skeleton className="h-8 w-20 mt-3" /> : <div className="relative num text-[1.7rem] sm:text-[2rem] font-semibold tracking-[-0.04em] mt-2 leading-none">{value ?? '—'}</div>}
-      {sub && <div className="relative text-[11.5px] text-ink/75 mt-2 truncate">{sub}</div>}
+      <div className="relative flex items-center justify-between gap-2"><span className="text-[0.9375rem] font-semibold text-ink/80 truncate">{label}</span><span className="size-8 rounded-xl bg-white/80 grid place-items-center text-ink shrink-0"><Icon size={15} /></span></div>
+      {loading ? <Skeleton className="h-8 w-20 mt-3" /> : <div className="relative impact text-[2.2rem] sm:text-[2.6rem] mt-2">{value ?? '—'}</div>}
+      {sub && <div className="relative text-[0.875rem] text-ink/75 mt-2 truncate">{sub}</div>}
     </div>
   );
 }
@@ -53,7 +53,7 @@ export default function AdminOverview() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <p className="eyebrow">Admin panel</p>
-          <h1 className="text-[1.7rem] md:text-[2.2rem] font-semibold leading-tight tracking-[-0.035em] mt-1">{hello}, {me?.name?.split(' ')[0]}</h1>
+          <h1 className="display text-[1.5rem] md:text-[1.9rem] mt-2 break-words">{hello}, {me?.name?.split(' ')[0]}</h1>
           <p className="text-sm text-mute mt-1">Users, signals, site content and email in one place.</p>
         </div>
         <div className="flex flex-wrap gap-2"><Link to="/admin/users" className="btn btn-ghost"><UserPlus size={15} />Users</Link><Link to="/admin/signals" className="btn btn-primary"><Radio size={15} />New signal</Link></div>
@@ -70,7 +70,7 @@ export default function AdminOverview() {
         {QUICK.map((q) => (
           <Link key={q.to} to={q.to} className="glass glass-hover p-4 flex flex-col gap-3 min-w-0 group">
             <span className={clsx('size-10 rounded-2xl grid place-items-center', q.tint, q.ic)}><q.icon size={18} /></span>
-            <span className="min-w-0"><span className="flex items-center gap-1 text-[13.5px] font-semibold">{q.label}<ArrowUpRight size={14} className="text-mute group-hover:text-ink transition-colors" /></span><span className="block text-[11.5px] text-mute mt-0.5 leading-snug">{q.hint}</span></span>
+            <span className="min-w-0"><span className="flex items-center gap-1 text-[1rem] font-semibold">{q.label}<ArrowUpRight size={14} className="text-mute group-hover:text-ink transition-colors" /></span><span className="block text-[0.875rem] text-mute mt-0.5 leading-snug">{q.hint}</span></span>
           </Link>
         ))}
       </section>
@@ -81,8 +81,8 @@ export default function AdminOverview() {
             <ul className="divide-y divide-[var(--color-line)]">
               {d.recentUsers.map((u) => (
                 <li key={u.id} className="flex items-center gap-3 px-4 sm:px-5 py-3">
-                  <span className="size-10 rounded-full grid place-items-center text-[13px] font-bold text-white bg-[linear-gradient(135deg,#3b7bf0,#0f2a66)] shrink-0">{u.name[0]?.toUpperCase()}</span>
-                  <div className="min-w-0 flex-1"><div className="text-[13.5px] font-semibold truncate">{u.name}</div><div className="text-[11.5px] text-mute truncate">{u.email} · joined {timeAgo(u.created_at)}</div></div>
+                  <span className="size-10 rounded-full grid place-items-center text-[0.9375rem] font-bold text-white bg-[linear-gradient(135deg,#3b7bf0,#0f2a66)] shrink-0">{u.name[0]?.toUpperCase()}</span>
+                  <div className="min-w-0 flex-1"><div className="text-[1rem] font-semibold truncate">{u.name}</div><div className="text-[0.875rem] text-mute truncate">{u.email} · joined {timeAgo(u.created_at)}</div></div>
                   <div className="hidden sm:flex gap-1.5"><span className={clsx('badge', u.role === 'admin' ? 'badge-accent' : 'badge-neutral')}>{u.role}</span>{!u.email_verified_at && <span className="badge badge-warn">unverified</span>}{u.status !== 'active' && <span className="badge badge-down">{u.status}</span>}</div>
                   <button className="btn btn-primary btn-sm" onClick={() => setEdit(u.id)} aria-label={`Edit ${u.email}`}><Pencil size={13} />Edit</button>
                 </li>
@@ -94,9 +94,9 @@ export default function AdminOverview() {
           {!d ? <Skeleton className="h-44" /> : (
             <>
               <div className="flex items-end gap-1.5 h-40" role="img" aria-label="Sign-ups per day">
-                {days.map((s, i) => <div key={s.d} className="flex-1 flex flex-col items-center justify-end gap-1 h-full" title={`${s.d}: ${s.n}`}><span className="num text-[10px] text-mute h-3">{s.n || ''}</span><div className={clsx('w-full max-w-[18px] rounded-full', s.n ? (i === peak ? 'bg-accent' : 'bg-[#0f1f3d]') : 'bg-ink/[0.08]')} style={{ height: `${s.n ? (s.n / max) * 78 : 4}%`, minHeight: 4 }} /><span className="text-[9.5px] text-dim">{s.d.slice(8)}</span></div>)}
+                {days.map((s, i) => <div key={s.d} className="flex-1 flex flex-col items-center justify-end gap-1 h-full" title={`${s.d}: ${s.n}`}><span className="num text-[0.75rem] text-mute h-3">{s.n || ''}</span><div className={clsx('w-full max-w-[18px] rounded-full', s.n ? (i === peak ? 'bg-accent' : 'bg-[#0f1f3d]') : 'bg-ink/[0.08]')} style={{ height: `${s.n ? (s.n / max) * 78 : 4}%`, minHeight: 4 }} /><span className="text-[0.75rem] text-dim">{s.d.slice(8)}</span></div>)}
               </div>
-              {d.pendingVerification > 0 && <p className="mt-3 text-[12px] text-mute flex items-center gap-1.5"><MailWarning size={13} className="text-warn" />{d.pendingVerification} account{d.pendingVerification === 1 ? '' : 's'} not verified yet</p>}
+              {d.pendingVerification > 0 && <p className="mt-3 text-[0.875rem] text-mute flex items-center gap-1.5"><MailWarning size={13} className="text-warn" />{d.pendingVerification} account{d.pendingVerification === 1 ? '' : 's'} not verified yet</p>}
             </>
           )}
         </Card>
@@ -114,11 +114,11 @@ export default function AdminOverview() {
           <div aria-hidden className="absolute -right-16 -bottom-24 size-72 rounded-full bg-[radial-gradient(closest-side,rgba(111,166,239,0.55),transparent)]" />
           <div className="relative flex items-start gap-3">
             <span className="size-11 rounded-2xl glass-chip grid place-items-center shrink-0"><FileSpreadsheet size={20} /></span>
-            <div className="min-w-0"><h2 className="text-[1.15rem] font-semibold">Master Excel workbook</h2><p className="text-[12.5px] text-mute">Signals, trades, orders, users, watchlists and activity. Updated on every change, passwords never included.</p></div>
+            <div className="min-w-0"><h2 className="text-[1.15rem] font-semibold">Master Excel workbook</h2><p className="text-[0.9375rem] text-mute">Signals, trades, orders, users, watchlists and activity. Updated on every change, passwords never included.</p></div>
           </div>
           <div className="relative mt-4 grid grid-cols-2 gap-3 text-sm">
-            <div className="glass-chip px-3 py-2.5"><div className="text-[11px] text-mute">Last updated</div><div className="font-semibold mt-0.5">{m ? (m.modified ? timeAgo(m.modified) : '—') : '…'}</div></div>
-            <div className="glass-chip px-3 py-2.5"><div className="text-[11px] text-mute">Size</div><div className="num font-semibold mt-0.5">{m?.size ? `${(m.size / 1024).toFixed(1)} KB` : '—'}</div></div>
+            <div className="glass-chip px-3 py-2.5"><div className="text-[0.8125rem] text-mute">Last updated</div><div className="font-semibold mt-0.5">{m ? (m.modified ? timeAgo(m.modified) : '—') : '…'}</div></div>
+            <div className="glass-chip px-3 py-2.5"><div className="text-[0.8125rem] text-mute">Size</div><div className="num font-semibold mt-0.5">{m?.size ? `${(m.size / 1024).toFixed(1)} KB` : '—'}</div></div>
           </div>
           {m?.pending && <p className="relative text-warn text-xs mt-2">Update in progress…</p>}{m?.lastError && <p className="relative text-down text-xs mt-2">{m.lastError}</p>}
           <div className="relative mt-auto pt-5"><ExcelButton path="/export/master" label="Download master workbook" small={false} ghost={false} /></div>
@@ -129,18 +129,18 @@ export default function AdminOverview() {
         {!d ? <div className="p-4"><Skeleton className="h-32" /></div> : (
           <ul className="divide-y divide-[var(--color-line)]" data-testid="activity-list">
             {d.recentActivity.map((a) => (
-              <li key={a.id} className="grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)_minmax(0,1fr)_90px_auto] xl:grid-cols-[230px_minmax(0,1.6fr)_minmax(0,1fr)_90px_auto] items-center gap-x-4 gap-y-1 px-4 sm:px-5 py-2.5 text-[13px]">
-                <span className="text-mute num text-[12px] order-3 sm:order-none col-span-2 sm:col-span-1">{fmtDate(a.created_at, 'dd MMM, HH:mm:ss')}{a.ip ? ` · ${a.ip}` : ''}</span>
+              <li key={a.id} className="grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)_minmax(0,1fr)_90px_auto] xl:grid-cols-[230px_minmax(0,1.6fr)_minmax(0,1fr)_90px_auto] items-center gap-x-4 gap-y-1 px-4 sm:px-5 py-2.5 text-[0.9375rem]">
+                <span className="text-mute num text-[0.875rem] order-3 sm:order-none col-span-2 sm:col-span-1">{fmtDate(a.created_at, 'dd MMM, HH:mm:ss')}{a.ip ? ` · ${a.ip}` : ''}</span>
                 <span className="min-w-0 truncate font-medium">{a.user_name ? <>{a.user_name} <span className="text-mute font-normal">{a.email}</span></> : a.email}</span>
                 <span className="hidden sm:block capitalize text-mute truncate">{EVENT(a.event)}</span>
                 <span className="hidden sm:block"><span className={`badge ${a.success ? 'badge-up' : 'badge-down'}`}>{a.success ? 'Success' : 'Failed'}</span></span>
-                <span className="justify-self-end">{a.user_id ? <button className="btn btn-ghost btn-sm" onClick={() => setEdit(a.user_id)} aria-label={`Edit ${a.email}`}><Pencil size={12} />Edit</button> : <span className="text-[11px] text-dim">no account</span>}</span>
+                <span className="justify-self-end">{a.user_id ? <button className="btn btn-ghost btn-sm" onClick={() => setEdit(a.user_id)} aria-label={`Edit ${a.email}`}><Pencil size={12} />Edit</button> : <span className="text-[0.8125rem] text-dim">no account</span>}</span>
               </li>
             ))}
           </ul>
         )}
       </Card>
-      <p className="text-[11.5px] text-dim flex items-center gap-1.5"><Wifi size={12} />{d ? `${d.online} live connection${d.online === 1 ? '' : 's'}` : ''}</p>
+      <p className="text-[0.875rem] text-dim flex items-center gap-1.5"><Wifi size={12} />{d ? `${d.online} live connection${d.online === 1 ? '' : 's'}` : ''}</p>
       <UserDrawer userId={edit} me={me} onClose={() => setEdit(null)} onChanged={refresh} />
     </div>
   );

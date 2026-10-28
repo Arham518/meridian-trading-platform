@@ -14,7 +14,7 @@ export function Card({ title, subtitle, actions, children, className = '', bodyC
         <header className="flex items-center justify-between gap-3 px-4 sm:px-5 py-3 border-b border-line min-h-[52px]">
           <div className="min-w-0">
             <h2 className="text-[0.9rem] font-semibold tracking-[-0.01em] truncate">{title}</h2>
-            {subtitle && <p className="text-[11px] text-mute truncate">{subtitle}</p>}
+            {subtitle && <p className="text-[0.8125rem] text-mute truncate">{subtitle}</p>}
           </div>
           {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
         </header>
@@ -26,10 +26,10 @@ export function Card({ title, subtitle, actions, children, className = '', bodyC
 
 export function PageHeader({ title, subtitle, actions }) {
   return (
-    <div className="flex flex-wrap items-end justify-between gap-3 mb-5">
-      <div>
-        <h1 className="text-[1.6rem] md:text-[2rem] font-semibold leading-tight tracking-[-0.035em]">{title}</h1>
-        {subtitle && <p className="text-sm text-mute mt-1 max-w-2xl">{subtitle}</p>}
+    <div className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4 mb-6">
+      <div className="min-w-0 max-w-full">
+        <h1 className="display text-[1.5rem] md:text-[1.9rem] break-words">{title}</h1>
+        {subtitle && <p className="text-[1rem] text-mute mt-2 max-w-3xl">{subtitle}</p>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
     </div>
@@ -61,15 +61,15 @@ export function ErrorState({ message = 'Something went wrong', onRetry }) {
 export const StatusBadge = ({ status }) => { const m = STATUS_META[status] || { label: status, cls: 'badge-neutral' }; return <span className={clsx('badge', m.cls)}>{m.label}</span>; };
 export const DirBadge = ({ dir }) => <span className={clsx('badge', dir === 'BUY' ? 'badge-up' : 'badge-down')}>{dir}</span>;
 export const RiskBadge = ({ risk }) => <span className={clsx('badge', risk === 'low' ? 'badge-up' : risk === 'high' ? 'badge-down' : 'badge-warn')}>{risk[0].toUpperCase() + risk.slice(1)} risk</span>;
-export const SimTag = ({ title = 'Simulated market data' }) => <span title={title} className="badge badge-warn !h-[18px] !text-[10px]">SIM</span>;
+export const SimTag = ({ title = 'Simulated market data' }) => <span title={title} className="badge badge-warn !h-[18px] !text-[0.75rem]">SIM</span>;
 
 /** One cell of a stat strip (parent has the .stats class: hairline-separated cells, no boxes). */
 export function StatCard({ label, value, sub, tone, loading, icon: Icon }) {
   return (
     <div className="glass px-4 sm:px-5 py-4 min-w-0">
-      <div className="flex items-center justify-between gap-2"><span className="text-[12px] font-medium text-mute truncate">{label}</span>{Icon && <span className="size-7 rounded-lg grid place-items-center bg-accent-soft text-accent-2 shrink-0"><Icon size={14} /></span>}</div>
-      {loading ? <Skeleton className="h-7 w-24 mt-2" /> : <div className={clsx('num text-[1.35rem] sm:text-[1.6rem] font-semibold tracking-[-0.03em] mt-1.5 leading-tight truncate', tone)}>{value}</div>}
-      {sub && <div className="text-[11px] text-mute mt-1 truncate">{sub}</div>}
+      <div className="flex items-center justify-between gap-2"><span className="text-[0.875rem] font-medium text-mute truncate">{label}</span>{Icon && <span className="size-7 rounded-lg grid place-items-center bg-accent-soft text-accent-2 shrink-0"><Icon size={14} /></span>}</div>
+      {loading ? <Skeleton className="h-7 w-24 mt-2" /> : <div className={clsx('impact text-[1.9rem] sm:text-[2.2rem] mt-2 truncate', tone)}>{value}</div>}
+      {sub && <div className="text-[0.8125rem] text-mute mt-1 truncate">{sub}</div>}
     </div>
   );
 }

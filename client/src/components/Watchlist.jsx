@@ -24,12 +24,12 @@ const Row = memo(function Row({ symbol, active, onSelect, onRemove, spark }) {
       <button className="p-1 -ml-1 text-accent" onClick={(e) => { e.stopPropagation(); onRemove(symbol); }} aria-label={`Remove ${symbol} from watchlist`} title="Remove from watchlist"><Star size={13} className="fill-accent" /></button>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5 text-sm font-medium">{pairLabel(symbol)}{q.source === 'simulated' && <SimTag />}</div>
-        <div className="text-[11px] text-dim truncate">{q.name}</div>
+        <div className="text-[0.8125rem] text-dim truncate">{q.name}</div>
       </div>
       <div className="hidden sm:block"><Sparkline data={spark} width={64} height={24} up={q.changePct >= 0} /></div>
       <div className="text-right w-[92px] shrink-0">
-        <Price value={q.price} decimals={q.decimals} className="block text-[13px]" />
-        <Change pct={q.changePct} className="text-[11px]" />
+        <Price value={q.price} decimals={q.decimals} className="block text-[0.9375rem]" />
+        <Change pct={q.changePct} className="text-[0.8125rem]" />
       </div>
     </li>
   );
@@ -54,7 +54,7 @@ export default function Watchlist({ activeSymbol, onSelect, max }) {
         </div>
       )}
       {!adding && addable.length > 0 && (
-        <button className="w-full flex items-center gap-2 px-4 py-2.5 text-[12px] text-mute hover:text-ink hover:bg-ink/[0.03] border-b border-line" onClick={() => setAdding(true)}><Plus size={13} />Add symbol</button>
+        <button className="w-full flex items-center gap-2 px-4 py-2.5 text-[0.875rem] text-mute hover:text-ink hover:bg-ink/[0.03] border-b border-line" onClick={() => setAdding(true)}><Plus size={13} />Add symbol</button>
       )}
       {shown.length === 0 ? <EmptyState title="Your watchlist is empty" hint="Add symbols to track them here. Saved to your account." icon={Star} /> : (
         <ul>{shown.map((s) => <Row key={s} symbol={s} active={s === activeSymbol} onSelect={onSelect} onRemove={remove} spark={spark[s]} />)}</ul>

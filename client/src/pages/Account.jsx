@@ -17,7 +17,7 @@ const SECTIONS = [['profile', 'Profile'], ['email', 'Email'], ['password', 'Pass
 function Section({ id, title, desc, children }) {
   return (
     <section id={id} className="scroll-mt-24 grid md:grid-cols-[220px_minmax(0,1fr)] gap-x-10 gap-y-3 py-7 border-t border-line first:border-t-0 first:pt-0">
-      <div><h2 className="text-[0.9375rem] font-semibold">{title}</h2>{desc && <p className="text-[12.5px] text-mute mt-1 leading-relaxed">{desc}</p>}</div>
+      <div><h2 className="text-[0.9375rem] font-semibold">{title}</h2>{desc && <p className="text-[0.9375rem] text-mute mt-1 leading-relaxed">{desc}</p>}</div>
       <div className="min-w-0 max-w-xl">{children}</div>
     </section>
   );
@@ -59,7 +59,7 @@ function EmailSection() {
       <div className="flex items-start gap-3 text-sm">
         {user.emailVerified ? <MailCheck size={18} className="text-up mt-0.5 shrink-0" /> : <MailWarning size={18} className="text-accent-2 mt-0.5 shrink-0" />}
         <div className="min-w-0"><div className="font-medium break-all">{user.email}</div>
-          <div className="text-[12.5px] text-mute">{user.emailVerified ? 'Verified' : 'Not verified. Signals and paper trading stay locked until you confirm it.'}</div>
+          <div className="text-[0.9375rem] text-mute">{user.emailVerified ? 'Verified' : 'Not verified. Signals and paper trading stay locked until you confirm it.'}</div>
           {!user.emailVerified && <button className="btn btn-ghost btn-sm mt-2" onClick={resendVerify} disabled={resend.busy || resend.left > 0}>{resend.left > 0 ? `Resend in ${resend.left}s` : 'Resend verification email'}</button>}
         </div>
       </div>
@@ -127,7 +127,7 @@ function TwoFactor() {
   if (user.twoFactorEnabled) {
     return (
       <div className="space-y-4">
-        <div className="flex items-center gap-2.5 text-sm"><ShieldCheck size={18} className="text-up" /><span className="font-medium">Enabled</span><span className="text-mute text-[12.5px]">{info.data ? `${info.data.backupCodesLeft} backup codes left` : ''}</span></div>
+        <div className="flex items-center gap-2.5 text-sm"><ShieldCheck size={18} className="text-up" /><span className="font-medium">Enabled</span><span className="text-mute text-[0.9375rem]">{info.data ? `${info.data.backupCodesLeft} backup codes left` : ''}</span></div>
         <div className="flex gap-2"><button className="btn btn-ghost btn-sm" onClick={() => { setRegen(true); setErr(''); }}>New backup codes</button><button className="btn btn-danger btn-sm" onClick={() => { setOff(true); setErr(''); }}>Turn off</button></div>
         {[[off, setOff, 'Turn off two-factor', '/auth/2fa/disable', () => { setOff(false); reload(); toast.success('Two-factor authentication is off'); }, 'Turn off'], [regen, setRegen, 'Generate new backup codes', '/auth/2fa/backup-codes', (r) => { setRegen(false); setCodes(r.backupCodes); }, 'Generate']].map(([open, setOpen, title, path, after, cta]) => (
           <Modal key={title} open={open} onClose={() => setOpen(false)} title={title} width="max-w-sm" footer={<><button className="btn btn-ghost" onClick={() => setOpen(false)}>Cancel</button><button className="btn btn-primary" form={`f-${path}`} disabled={busy || !offF.password || offF.code.length < 6}>{busy ? <Spinner /> : cta}</button></>}>
@@ -153,10 +153,10 @@ function TwoFactor() {
         <form onSubmit={enable} className="space-y-4">
           <div className="flex flex-col sm:flex-row gap-5 items-start">
             <img src={setup.qr} alt="QR code for your authenticator app" width="176" height="176" className="rounded-md border border-line-2 bg-bg p-1.5" data-testid="totp-qr" />
-            <div className="text-[12.5px] text-mute space-y-2 min-w-0">
+            <div className="text-[0.9375rem] text-mute space-y-2 min-w-0">
               <p>1. Scan the code with your authenticator app.</p>
               <p>2. Or enter this key manually:</p>
-              <code className="num block break-all text-ink text-[13px] border border-line-2 rounded-lg px-2 py-1.5" data-testid="totp-secret">{setup.secret}</code>
+              <code className="num block break-all text-ink text-[0.9375rem] border border-line-2 rounded-lg px-2 py-1.5" data-testid="totp-secret">{setup.secret}</code>
               <p>3. Type the 6-digit code it shows.</p>
             </div>
           </div>
@@ -191,7 +191,7 @@ function Sessions() {
           <li key={s.id} className="flex items-center gap-3 px-3.5 py-3">
             <Icon size={17} className="text-mute shrink-0" />
             <div className="min-w-0 flex-1"><div className="text-sm font-medium flex items-center gap-2 flex-wrap">{d.label}{s.current && <span className="badge badge-accent">This device</span>}</div>
-              <div className="text-[11.5px] text-mute num truncate">{s.ip || 'unknown IP'} · active {timeAgo(s.lastUsedAt)} · {s.remember ? 'kept for 30 days' : 'until you close the browser'}</div></div>
+              <div className="text-[0.875rem] text-mute num truncate">{s.ip || 'unknown IP'} · active {timeAgo(s.lastUsedAt)} · {s.remember ? 'kept for 30 days' : 'until you close the browser'}</div></div>
             {!s.current && <button className="btn btn-ghost btn-sm" onClick={() => revoke(s.id)} disabled={busy === s.id}>{busy === s.id ? <Spinner /> : 'Sign out'}</button>}
           </li>); })}
       </ul>
@@ -209,7 +209,7 @@ export default function Account() {
   return (
     <div className="max-w-5xl">
       <PageHeader title="Account" subtitle="Profile, sign-in security and your data." />
-      <div className="flex gap-x-5 gap-y-1 flex-wrap text-[12.5px] mb-7 border-b border-line pb-3">{SECTIONS.map(([id, t]) => <a key={id} href={`#${id}`} className="text-mute hover:text-ink">{t}</a>)}</div>
+      <div className="flex gap-x-5 gap-y-1 flex-wrap text-[0.9375rem] mb-7 border-b border-line pb-3">{SECTIONS.map(([id, t]) => <a key={id} href={`#${id}`} className="text-mute hover:text-ink">{t}</a>)}</div>
       <Section id="profile" title="Profile" desc="How you appear on the platform."><Profile /></Section>
       <Section id="email" title="Email address" desc="Used to sign in and for security notices. A change is confirmed from the new address."><EmailSection /></Section>
       <Section id="password" title="Password" desc="Changing it signs out every other device."><PasswordSection /></Section>
@@ -217,7 +217,7 @@ export default function Account() {
       <Section id="sessions" title="Active sessions" desc="Devices that are signed in to your account."><Sessions /></Section>
       <Section id="data" title="Paper account & data" desc="Virtual money only. Nothing here moves real funds.">
         <dl className="flex gap-10 mb-5"><div><dt className="label">Cash balance</dt><dd className="num text-xl mt-1">{fmtMoney(pf.data?.balance)}</dd></div><div><dt className="label">Equity</dt><dd className="num text-xl mt-1">{fmtMoney(pf.data?.equity)}</dd></div></dl>
-        <p className="text-[13px] text-mute mb-4">One workbook with your trades, orders, watchlist, sign-in activity and the signal archive. Password hashes and secrets are never exported.</p>
+        <p className="text-[0.9375rem] text-mute mb-4">One workbook with your trades, orders, watchlist, sign-in activity and the signal archive. Password hashes and secrets are never exported.</p>
         <ExcelButton path="/export/my" label="Download my workbook (.xlsx)" small={false} />
       </Section>
     </div>

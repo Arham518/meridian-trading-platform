@@ -34,5 +34,17 @@ export default defineConfig({
     },
   },
   // dev server: fill the placeholders that the production server replaces (APP_URL, site name)
-  plugins: [react(), tailwindcss(), { name: 'meridian-html-placeholders', apply: 'serve', transformIndexHtml: (html) => html.replaceAll('__APP_URL__', 'http://localhost:5173').replaceAll('__SITE_NAME__', 'Meridian') }],
+  plugins: [react(), tailwindcss(),
+    // build: preload the two self-hosted display fonts (Michroma, Anton) so the hero headline paints in its final face,
+    // plus the landing chunk
+    { name: 'meridian-font-preload', apply: 'build', transformIndexHtml: { order: 'post', handler: (html, ctx) => {
+      const fonts = Object.keys(ctx.bundle || {}).filter((f) => /(michroma|anton)-latin-400-normal-[^/]+\.woff2$/.test(f));
+      // the landing page is the usual entry point: fetch its lazy chunk in parallel with the main bundle instead of after it
+      const landing = Object.keys(ctx.bundle || {}).filter((f) => /^assets\/Landing-[^/]+\.js$/.test(f));
+      return { html, tags: [
+        ...fonts.map((f) => ({ tag: 'link', attrs: { rel: 'preload', as: 'font', type: 'font/woff2', href: `/${f}`, crossorigin: '' }, injectTo: 'head' })),
+        ...landing.map((f) => ({ tag: 'link', attrs: { rel: 'modulepreload', href: `/${f}`, crossorigin: '' }, injectTo: 'head' })),
+      ] };
+    } } },
+    { name: 'meridian-html-placeholders', apply: 'serve', transformIndexHtml: (html) => html.replaceAll('__APP_URL__', 'http://localhost:5173').replaceAll('__SITE_NAME__', 'Meridian') }],
 });

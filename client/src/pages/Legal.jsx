@@ -57,22 +57,22 @@ export default function Legal({ doc }) {
   return (
     <div className="min-h-dvh">
       <header className="px-3 sm:px-5 pt-3 sticky top-0 z-40">
-        <div className="frost max-w-[1100px] mx-auto h-14 px-4 sm:px-5 flex items-center justify-between !rounded-2xl">
+        <div className="frost max-w-[72rem] mx-auto h-14 px-4 sm:px-5 flex items-center justify-between !rounded-2xl">
           <Link to="/" aria-label={`${siteName} home`}><Logo name={siteName} /></Link>
           <Link to="/" className="btn btn-ghost btn-sm"><ArrowLeft size={14} />Home</Link>
         </div>
       </header>
-      <main id="main" className="max-w-[1100px] mx-auto px-5 sm:px-8 py-10 sm:py-14 grid lg:grid-cols-[220px_minmax(0,1fr)] gap-8">
+      <main id="main" className="max-w-[72rem] mx-auto px-5 sm:px-8 py-10 sm:py-14 grid lg:grid-cols-[220px_minmax(0,1fr)] gap-8">
         <nav className="glass p-2 self-start lg:sticky lg:top-24 flex lg:flex-col gap-1 overflow-x-auto" aria-label="Legal documents">
-          {Object.entries(DOCS).map(([k, v]) => <NavLink key={k} to={`/${k}`} className={({ isActive }) => `px-3 py-2 rounded-lg text-[13.5px] whitespace-nowrap ${isActive ? 'bg-accent text-white font-semibold' : 'text-mute hover:text-ink hover:bg-ink/[0.04]'}`}>{v.title}</NavLink>)}
+          {Object.entries(DOCS).map(([k, v]) => <NavLink key={k} to={`/${k}`} className={({ isActive }) => `px-3 py-2 rounded-lg text-[1rem] whitespace-nowrap ${isActive ? 'bg-accent text-white font-semibold' : 'text-mute hover:text-ink hover:bg-ink/[0.04]'}`}>{v.title}</NavLink>)}
         </nav>
         <article className="glass p-6 sm:p-10 min-w-0" data-testid="legal-page">
-          <div role="note" className="flex gap-3 rounded-xl border border-warn/30 bg-[#fff6e5] px-4 py-3 text-[13px] text-[#6b4100]">
+          <div role="note" className="flex gap-3 rounded-xl border border-warn/30 bg-[#fff6e5] px-4 py-3 text-[0.9375rem] text-[#6b4100]">
             <FileWarning size={18} className="shrink-0 mt-0.5" /><p><b>Draft.</b> This document is a draft and has not yet been reviewed by a lawyer. It may change before it is finalised.</p>
           </div>
           <p className="eyebrow mt-8">Legal · Draft</p>
-          <h1 className="display text-[2.2rem] sm:text-[2.8rem] mt-3">{d.title}</h1>
-          <p className="text-[13px] text-dim mt-2">Last updated {UPDATED}</p>
+          <h1 className="display text-[1.67rem] sm:text-[2.13rem] mt-3">{d.title}</h1>
+          <p className="text-[0.9375rem] text-dim mt-2">Last updated {UPDATED}</p>
           <div className="mt-8 space-y-7">
             {d.sections.map(([h, t]) => <section key={h}><h2 className="text-[1.1rem] font-semibold tracking-[-0.01em]">{h}</h2><p className="mt-2 text-mute leading-relaxed">{t.replaceAll('{site}', siteName)}</p></section>)}
           </div>

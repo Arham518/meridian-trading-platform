@@ -37,7 +37,7 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
   useEffect(() => {
     const chart = createChart(host.current, {
       autoSize: true,
-      layout: { background: { type: ColorType.Solid, color: 'transparent' }, textColor: C.mute, fontFamily: '"Geist Mono Variable", ui-monospace, monospace', fontSize: 11, panes: { separatorColor: C.separator } },
+      layout: { background: { type: ColorType.Solid, color: 'transparent' }, textColor: C.mute, fontFamily: '"Geist Mono Variable", ui-monospace, monospace', fontSize: 13, panes: { separatorColor: C.separator } },
       grid: { vertLines: { color: C.gridV }, horzLines: { color: C.grid } },
       crosshair: { mode: CrosshairMode.Normal, vertLine: { color: C.cross, labelBackgroundColor: C.crossLabel }, horzLine: { color: C.cross, labelBackgroundColor: C.crossLabel } },
       rightPriceScale: { borderVisible: false, scaleMargins: { top: 0.08, bottom: 0.2 } },
@@ -179,7 +179,7 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
       <div className="relative flex-1 min-h-[280px]">
         <div ref={host} className="absolute inset-0" role="img" aria-label={`${symbol} ${interval} price chart`} />
         {shown && (
-          <div className="absolute left-3 top-2 z-10 max-w-[55%] flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] num pointer-events-none">
+          <div className="absolute left-3 top-2 z-10 max-w-[55%] flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[0.8125rem] num pointer-events-none">
             <span className="text-mute hidden sm:inline">O <b className="text-ink font-medium">{fmtPrice(shown.o, decimals)}</b></span>
             <span className="text-mute hidden sm:inline">H <b className="text-ink font-medium">{fmtPrice(shown.h, decimals)}</b></span>
             <span className="text-mute hidden sm:inline">L <b className="text-ink font-medium">{fmtPrice(shown.l, decimals)}</b></span>
@@ -188,7 +188,7 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
           </div>
         )}
         <div className="absolute right-3 top-2 z-10 flex items-center gap-1.5 pointer-events-none">
-          {state.source === 'binance' && <span className="badge badge-up !h-[18px] !text-[10px]"><span className="live-dot !size-1.5" />Binance live</span>}
+          {state.source === 'binance' && <span className="badge badge-up !h-[18px] !text-[0.75rem]"><span className="live-dot !size-1.5" />Binance live</span>}
           {state.source === 'simulated' && <SimTag title="Simulated data: the live market feed is unavailable for this instrument" />}
         </div>
         {state.loading && <div className="absolute inset-0 z-20 grid place-items-center bg-bg/50"><Spinner className="text-accent-2" /></div>}

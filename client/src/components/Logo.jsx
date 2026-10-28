@@ -24,7 +24,7 @@ export default function Logo({ name = 'Meridian', size = 30, compact = false }) 
   return (
     <span className="inline-flex items-center gap-2.5 text-ink">
       <LogoTile size={size} />
-      {!compact && <span className="font-display font-[680] text-[1.2rem] leading-none tracking-[-0.035em]">{name}</span>}
+      {!compact && <span className="font-display text-[1.02rem] leading-none tracking-[0.06em] uppercase">{name}</span>}
     </span>
   );
 }

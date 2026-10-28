@@ -38,7 +38,7 @@ export default function PositionsPanel({ portfolio, onChange, onSelectSymbol }) 
                   <td className="r num">{fmtPrice(t.entry_price)}</td>
                   <td className="r"><Price value={t.price} decimals={quotes[t.symbol]?.decimals} /></td>
                   <td className="r num text-mute">{t.stop_loss ? fmtPrice(t.stop_loss) : '—'} / {t.take_profit ? fmtPrice(t.take_profit) : '—'}</td>
-                  <td className={clsx('r num font-medium', pnlCls(t.pnl))}>{fmtSigned(t.pnl)} <span className="text-[11px] opacity-80">({fmtPct(t.pnlPct)})</span></td>
+                  <td className={clsx('r num font-medium', pnlCls(t.pnl))}>{fmtSigned(t.pnl)} <span className="text-[0.8125rem] opacity-80">({fmtPct(t.pnlPct)})</span></td>
                   <td className="r"><button className="btn btn-danger btn-sm" disabled={busy === `t${t.id}`} onClick={() => close(t)}>Close</button></td>
                 </tr>))}</tbody>
             </table>
