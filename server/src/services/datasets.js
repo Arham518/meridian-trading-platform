@@ -117,7 +117,7 @@ export const DATASETS = {
       if (f.status) { w.push('u.status = ?'); p.push(f.status); }
       if (f.verified === 'yes') w.push('u.email_verified_at IS NOT NULL');
       if (f.verified === 'no') w.push('u.email_verified_at IS NULL');
-      if (f.q) { w.push("(u.name LIKE ? ESCAPE '\\' OR u.email LIKE ? ESCAPE '\\')"); p.push(like(f.q), like(f.q)); }
+      if (f.q) { w.push("(u.name LIKE ? ESCAPE '\\' OR u.email LIKE ? ESCAPE '\\' OR u.username LIKE ? ESCAPE '\\')"); p.push(like(f.q), like(f.q), like(f.q)); }
       dateRange('u.created_at', f, w, p);
     },
     columns: [

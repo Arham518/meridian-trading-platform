@@ -14,6 +14,7 @@ import {
   createToken, consumeToken, cooldownLeft, TOKEN_TTL, createSession, rotateSession, revokeSession, revokeUserSessions, listSessions,
   makeBackupCodes, useBackupCode, backupCodesLeft, readCookie, setRefreshCookie, clearRefreshCookie, sha256,
 } from '../services/security.js';
+import { usersChanged } from '../realtime.js';
 import { newSecret, otpauthUrl, qrDataUrl, verifyTotp, encryptSecret, decryptSecret } from '../services/totp.js';
 
 const router = Router();
@@ -47,6 +48,7 @@ async function finishLogin(req, res, user, remember, via = 'login') {
   db.prepare('UPDATE users SET last_login_at = ?, failed_logins = 0, locked_until = NULL WHERE id = ?').run(new Date().toISOString(), user.id);
   const { token } = openSession(req, res, user, remember);
   note(user, via === 'login' ? 'login' : 'login', req);
+  usersChanged('login');
   if (everLoggedIn && !prior) { // sign-in from a device/IP we have not seen: security alert
     const t = templates.newLogin({ name: user.name, when: fmtWhen(), ip: req.ip || 'unknown', device: deviceOf(req) });
     sendMail({ to: user.email, subject: t.subject, html: t.html, text: t.text, kind: 'new-login' }).catch(() => {});
@@ -71,6 +73,7 @@ router.post('/register', limiter, wrap(async (req, res) => {
   note(user, 'register', req);
   await sendVerification(user);
   const { token } = openSession(req, res, user, false);
+  usersChanged('register');
   res.status(201).json({ token, user: publicUser(user), verificationSent: true });
 }));
 
@@ -79,7 +82,7 @@ router.post('/verify-email', mailLimiter, wrap((req, res) => {
   const row = consumeToken(token, 'verify_email');
   if (!row) return res.status(400).json({ error: 'This verification link is invalid, expired or was already used.', code: 'invalid_token' });
   db.prepare("UPDATE users SET email_verified_at = COALESCE(email_verified_at, ?) WHERE id = ?").run(new Date().toISOString(), row.user_id);
-  const user = getUser(row.user_id); note(user, 'email_verified', req);
+  const user = getUser(row.user_id); note(user, 'email_verified', req); usersChanged('verified');
   res.json({ ok: true, email: user.email });
 }));
 

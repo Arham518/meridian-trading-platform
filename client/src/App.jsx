@@ -28,6 +28,7 @@ const AdminSignals = lazy(() => import('./pages/admin/AdminSignals.jsx'));
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers.jsx'));
 const AdminRecords = lazy(() => import('./pages/admin/AdminRecords.jsx'));
 const AdminSettings = lazy(() => import('./pages/admin/AdminSettings.jsx'));
+const AdminEmail = lazy(() => import('./pages/admin/AdminEmail.jsx'));
 
 const Splash = () => <div className="min-h-dvh grid place-items-center"><div className="flex flex-col items-center gap-4"><LogoMark size={40} /><Spinner className="text-mute" /></div></div>;
 
@@ -78,6 +79,7 @@ export default function App() {
             <Route path="/admin/users" element={<AdminUsers />} />
             <Route path="/admin/records" element={<AdminRecords />} />
             <Route path="/admin/settings" element={<AdminSettings />} />
+            <Route path="/admin/email" element={<AdminEmail />} />
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

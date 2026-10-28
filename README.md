@@ -120,7 +120,7 @@ Copy `.env.example` to `.env`. Every value is optional. The most useful ones:
 
 | Variable | Purpose |
 |---|---|
-| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Admin account created on first run. Wrap a password containing `#` in quotes |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | Admin account, created on first run. A changed `ADMIN_PASSWORD` is applied on the next start. Wrap a password containing `#` in quotes |
 | `APP_URL` | Public address of the site, used for links inside emails |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | Real email delivery |
 | `REQUIRE_EMAIL_VERIFICATION` | `false` lets unverified users use signals and trading |
@@ -131,7 +131,7 @@ Copy `.env.example` to `.env`. Every value is optional. The most useful ones:
 
 ### Email
 
-With `SMTP_HOST` empty, nothing is sent. Every email is printed in the server console and saved as an HTML file in `server/data/outbox/`, which is handy for testing verification and reset links.
+With `SMTP_HOST` empty, nothing is sent. Every email is printed in the server console, saved as an HTML file in `server/data/outbox/` and listed in **Admin > Email**, which is handy for testing verification and reset links. Admin > Email also shows whether SMTP is configured and has a **Send test email** button.
 
 For Gmail, turn on 2-Step Verification, create an App Password, then set:
 

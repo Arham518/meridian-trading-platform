@@ -7,12 +7,13 @@ import { config } from '../config.js';
 import { z } from 'zod';
 import { db, getSettings, setSetting } from '../db.js';
 import { requireAuth, requireAdmin, wrap, publicUser } from '../auth.js';
-import { parse } from '../validate.js';
+import bcrypt from 'bcryptjs';
+import { parse, emailSchema, passwordSchema, usernameSchema } from '../validate.js';
 import { DATASETS, queryDataset } from '../services/datasets.js';
 import { statsFor } from '../services/signals.js';
 import { scheduleMasterRebuild } from '../services/excel.js';
-import { connectedCount } from '../realtime.js';
-import { sendMail } from '../services/mailer.js';
+import { connectedCount, usersChanged } from '../realtime.js';
+import { sendMail, mailMode, mailStatus, verifySmtp } from '../services/mailer.js';
 import { templates } from '../services/emailTemplates.js';
 import { createToken, cooldownLeft, revokeUserSessions, TOKEN_TTL } from '../services/security.js';
 import { logActivity } from '../auth.js';
@@ -49,16 +50,101 @@ router.get('/records/:type', wrap((req, res) => {
 
 router.get('/users', wrap((req, res) => res.json(queryDataset('users', req.query, {}, req.query))));
 
+// ------------------------------------------------------------------ user management (create / edit / password)
+const DEFAULT_WATCH = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'EURUSD', 'XAUUSD'];
+const getUser = (id) => db.prepare('SELECT * FROM users WHERE id = ?').get(id);
+const optUsername = usernameSchema.nullable().optional().or(z.literal('').transform(() => null));
+const balanceSchema = z.coerce.number({ message: 'must be a number' }).finite().min(0, 'cannot be negative').max(1e12);
+/** Other active admins besides `id` (the last active admin may not be demoted or disabled). */
+const otherActiveAdmins = (id) => db.prepare("SELECT COUNT(*) n FROM users WHERE role = 'admin' AND status = 'active' AND id != ?").get(id).n;
+const changed = (u, req, event) => { logActivity({ userId: u.id, email: u.email, event, req }); scheduleMasterRebuild(); usersChanged(event); };
+
+router.post('/users', wrap((req, res) => {
+  const d = parse(z.object({
+    name: z.string().trim().min(2, 'must be at least 2 characters').max(60), email: emailSchema, username: optUsername,
+    password: passwordSchema, role: z.enum(['user', 'admin']).default('user'), verified: z.boolean().default(true), balance: balanceSchema.optional(),
+  }), req.body);
+  if (db.prepare('SELECT id FROM users WHERE email = ?').get(d.email)) return res.status(409).json({ error: 'An account with this email already exists' });
+  if (d.username && db.prepare('SELECT id FROM users WHERE username = ?').get(d.username)) return res.status(409).json({ error: 'That username is taken' });
+  const info = db.prepare('INSERT INTO users (name, username, email, password_hash, role, balance, email_verified_at) VALUES (?,?,?,?,?,?,?)')
+    .run(d.name, d.username || null, d.email, bcrypt.hashSync(d.password, 11), d.role, d.balance ?? config.startBalance, d.verified ? new Date().toISOString() : null);
+  const ins = db.prepare('INSERT OR IGNORE INTO watchlists (user_id, symbol) VALUES (?, ?)');
+  for (const sym of DEFAULT_WATCH) ins.run(info.lastInsertRowid, sym);
+  const u = getUser(info.lastInsertRowid);
+  changed(u, req, 'admin_create_user');
+  res.status(201).json({ user: publicUser(u) });
+}));
+
 router.patch('/users/:id', wrap((req, res) => {
   const id = Number(req.params.id);
-  const target = db.prepare('SELECT * FROM users WHERE id = ?').get(id);
-  if (!target) return res.status(404).json({ error: 'User not found' });
-  const d = parse(z.object({ status: z.enum(['active', 'disabled']).optional(), role: z.enum(['user', 'admin']).optional() }), req.body);
-  if (id === req.user.id && (d.status === 'disabled' || (d.role && d.role !== 'admin'))) return res.status(400).json({ error: 'You cannot disable or demote your own account' });
-  if (d.status) { db.prepare('UPDATE users SET status = ? WHERE id = ?').run(d.status, id); if (d.status === 'disabled') revokeUserSessions(id); }
-  if (d.role) db.prepare('UPDATE users SET role = ? WHERE id = ?').run(d.role, id);
-  scheduleMasterRebuild();
-  res.json({ user: publicUser(db.prepare('SELECT * FROM users WHERE id = ?').get(id)) });
+  const u = getUser(id);
+  if (!u) return res.status(404).json({ error: 'User not found' });
+  const d = parse(z.object({
+    name: z.string().trim().min(2, 'must be at least 2 characters').max(60).optional(), username: optUsername, email: emailSchema.optional(),
+    status: z.enum(['active', 'disabled']).optional(), role: z.enum(['user', 'admin']).optional(), verified: z.boolean().optional(), balance: balanceSchema.optional(),
+  }), req.body);
+  const demote = d.role && d.role !== 'admin'; const disable = d.status === 'disabled';
+  if (id === req.user.id && (demote || disable)) return res.status(400).json({ error: 'You cannot disable or demote your own account' });
+  if (u.role === 'admin' && (demote || disable) && !otherActiveAdmins(id)) return res.status(400).json({ error: 'This is the last active admin. Make another user admin first.' });
+  if (d.email && db.prepare('SELECT id FROM users WHERE email = ? AND id != ?').get(d.email, id)) return res.status(409).json({ error: 'An account with this email already exists' });
+  if (d.username && db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(d.username, id)) return res.status(409).json({ error: 'That username is taken' });
+  const set = []; const vals = [];
+  const put = (col, v) => { set.push(`${col} = ?`); vals.push(v); };
+  if (d.name !== undefined) put('name', d.name);
+  if (d.username !== undefined) put('username', d.username);
+  if (d.email !== undefined && d.email !== u.email) { put('email', d.email); put('pending_email', null); }
+  if (d.role) put('role', d.role);
+  if (d.status) put('status', d.status);
+  if (d.balance !== undefined) put('balance', Number(d.balance.toFixed(2)));
+  if (d.verified === true && !u.email_verified_at) put('email_verified_at', new Date().toISOString());
+  if (d.verified === false) put('email_verified_at', null);
+  if (set.length) db.prepare(`UPDATE users SET ${set.join(', ')} WHERE id = ?`).run(...vals, id);
+  if (disable && u.status !== 'disabled') revokeUserSessions(id);
+  const after = getUser(id);
+  if (set.length) changed(after, req, 'admin_update_user');
+  res.json({ user: publicUser(after) });
+}));
+
+router.post('/users/:id/password', wrap((req, res) => {
+  const u = getUser(Number(req.params.id));
+  if (!u) return res.status(404).json({ error: 'User not found' });
+  if (u.id === req.user.id) return res.status(400).json({ error: 'Use Account > Change password for your own account.' });
+  const d = parse(z.object({ password: passwordSchema, confirmPassword: z.string().optional() }), req.body);
+  if (d.confirmPassword !== undefined && d.confirmPassword !== d.password) return res.status(400).json({ error: 'confirmPassword: passwords do not match' });
+  db.prepare('UPDATE users SET password_hash = ?, force_reset = 0, failed_logins = 0, locked_until = NULL WHERE id = ?').run(bcrypt.hashSync(d.password, 11), u.id);
+  const revoked = revokeUserSessions(u.id);
+  changed(u, req, 'admin_set_password');
+  const t = templates.passwordChanged({ name: u.name, when: new Date().toUTCString() });
+  sendMail({ to: u.email, subject: t.subject, html: t.html, text: t.text, kind: 'password-changed' }).catch(() => {});
+  res.json({ ok: true, sessionsRevoked: revoked });
+}));
+
+// ------------------------------------------------------------------ email: SMTP status, test email, outbox / sent log
+router.get('/email', wrap((req, res) => res.json(mailStatus())));
+router.post('/email/check', wrap(async (req, res) => res.json({ ...mailStatus(), check: await verifySmtp() })));
+router.post('/test-email', wrap(async (req, res) => {
+  const site = getSettings().site_name || 'Meridian';
+  const when = new Date().toUTCString();
+  const html = `<div style="font-family:Arial,sans-serif;font-size:14px;color:#222"><h2 style="margin:0 0 12px">${site}: test email</h2><p>This is a test email from the admin panel, sent ${when}.</p><p>If you can read this, email delivery works.</p></div>`;
+  const r = await sendMail({ to: req.user.email, subject: `${site}: test email`, html, text: `Test email from the ${site} admin panel, sent ${when}. Email delivery works.`, kind: 'test' });
+  logActivity({ userId: req.user.id, email: req.user.email, event: 'admin_test_email', success: !r.error, req });
+  if (r.error) return res.status(502).json({ error: `SMTP could not send the email: ${r.error}`, mode: mailMode() });
+  res.json({ ok: true, mode: mailMode(), to: req.user.email, savedToOutbox: !!r.dev });
+}));
+router.get('/emails', wrap((req, res) => {
+  const pageSize = Math.min(Math.max(Number(req.query.pageSize) || 20, 1), 100); const page = Math.max(Number(req.query.page) || 1, 1);
+  const where = []; const p = [];
+  if (req.query.q) { where.push("(to_addr LIKE ? ESCAPE '\\' OR subject LIKE ? ESCAPE '\\')"); const q = `%${String(req.query.q).replace(/[%_\\]/g, (m) => '\\' + m)}%`; p.push(q, q); }
+  if (req.query.status) { where.push('status = ?'); p.push(String(req.query.status)); }
+  const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const total = db.prepare(`SELECT COUNT(*) n FROM mail_log ${clause}`).get(...p).n;
+  const rows = db.prepare(`SELECT id, to_addr, subject, kind, transport, status, error, link, created_at, html IS NOT NULL AS has_html FROM mail_log ${clause} ORDER BY id DESC LIMIT ? OFFSET ?`).all(...p, pageSize, (page - 1) * pageSize);
+  res.json({ rows, total, page, pageSize, pages: Math.max(Math.ceil(total / pageSize), 1), mode: mailMode() });
+}));
+router.get('/emails/:id', wrap((req, res) => {
+  const row = db.prepare('SELECT * FROM mail_log WHERE id = ?').get(Number(req.params.id));
+  if (!row) return res.status(404).json({ error: 'Email not found' });
+  res.json({ email: row });
 }));
 
 const target = (req, res) => { const u = db.prepare('SELECT * FROM users WHERE id = ?').get(Number(req.params.id)); if (!u) res.status(404).json({ error: 'User not found' }); return u; };

@@ -34,7 +34,7 @@ Docs: [Express guide](https://docs.hostless.cloud/javascript/express), [hostless
 | `NODE_ENV` | `production` |
 | `APP_URL` | The app's public `https://…` URL (shown after the app is created). This turns on Secure cookies and fixes the links in emails |
 | `ADMIN_EMAIL` | Your admin login email |
-| `ADMIN_PASSWORD` | A strong password. Only used the first time the admin account is created |
+| `ADMIN_PASSWORD` | A strong password. Changing it later and redeploying sets the new password (and signs that admin out). While it stays the same, a password changed on the Account page is kept |
 | `SEED_DEMO` | `false` for a clean site (`true` adds labelled demo data) |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `MAIL_FROM` | Real email for verification and password reset. Gmail: `smtp.gmail.com`, `587`, your address, a 16-character App Password |
 | `REQUIRE_EMAIL_VERIFICATION` | Optional. `false` until SMTP works, otherwise new members can't verify |

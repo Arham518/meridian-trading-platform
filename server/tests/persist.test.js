@@ -23,8 +23,8 @@ async function start(env) {
   // each start gets a NEW empty working folder, like a fresh container on the host
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'meridian-persist-'));
   const child = spawn(process.execPath, [SERVER], {
-    env: { ...process.env, ...env, PORT: String(port), DATA_DIR: dir, NODE_ENV: 'production', FORCE_SIMULATED: 'true', DISABLE_MARKET_POLL: 'true',
-      REQUIRE_EMAIL_VERIFICATION: 'false', RATE_LIMIT_AUTH: '1000', ADMIN_EMAIL: ADMIN.email, ADMIN_PASSWORD: ADMIN.password, SEED_DEMO: 'false' },
+    env: { ...process.env, PORT: String(port), DATA_DIR: dir, NODE_ENV: 'production', FORCE_SIMULATED: 'true', DISABLE_MARKET_POLL: 'true',
+      REQUIRE_EMAIL_VERIFICATION: 'false', RATE_LIMIT_AUTH: '1000', ADMIN_EMAIL: ADMIN.email, ADMIN_PASSWORD: ADMIN.password, SEED_DEMO: 'false', ...env },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   children.add(child); child.once('exit', () => children.delete(child));
@@ -114,6 +114,37 @@ test('hosted mode: users, signals, trades, settings and uploads survive restarts
   assert.ok(!list4.body.rows.some((r) => r.notes === 'persist me'), 'deletion kept');
   const gone = await fetch(s.base + imageUrl); // 404, or the SPA page when the client is built
   assert.ok(!(gone.headers.get('content-type') || '').startsWith('image/'), 'deleted image not restored');
+  await s.stop('SIGTERM');
+});
+
+test('hosted mode: admin user edits, email log and ADMIN_PASSWORD changes are kept across restarts', { skip, timeout: 120000 }, async () => {
+  const env = { DATABASE_URL: await freshPgUrl(), JWT_SECRET: 'persist-secret-0123456789abcdef012345' };
+  let s = await start(env);
+  let admin = await s.login(ADMIN.email, ADMIN.password);
+  const c = await s.api('POST', '/api/admin/users', { token: admin, body: { name: 'Made By Admin', email: 'made@test.local', password: 'Made#By2026x', role: 'user', verified: true } });
+  assert.equal(c.status, 201, JSON.stringify(c.body));
+  assert.equal((await s.api('PATCH', `/api/admin/users/${c.body.user.id}`, { token: admin, body: { name: 'Edited By Admin', balance: 1234 } })).status, 200);
+  assert.equal((await s.api('POST', '/api/admin/test-email', { token: admin })).status, 200);
+  await s.stop('SIGKILL'); // confirmed changes must already be stored
+
+  // restart with a NEW ADMIN_PASSWORD: it replaces the old one
+  const NEW = 'Changed#Env2027';
+  s = await start({ ...env, ADMIN_PASSWORD: NEW });
+  assert.equal(await s.login(ADMIN.email, ADMIN.password), undefined, 'old env password no longer works');
+  admin = await s.login(ADMIN.email, NEW);
+  assert.ok(admin, 'new env password works');
+  const users = await s.api('GET', '/api/admin/users?q=made@test.local', { token: admin });
+  assert.equal(users.body.rows[0]?.name, 'Edited By Admin');
+  assert.equal(users.body.rows[0]?.balance, 1234);
+  assert.ok(await s.login('made@test.local', 'Made#By2026x'), 'admin-created user can sign in after restart');
+  const mails = await s.api('GET', '/api/admin/emails', { token: admin });
+  assert.ok(mails.body.rows.some((m) => m.kind === 'test'), 'email log kept');
+  // password changed on the Account page survives a restart with the same env
+  const ACC = 'Account#Kept2028';
+  assert.equal((await s.api('POST', '/api/auth/change-password', { token: admin, body: { currentPassword: NEW, newPassword: ACC, confirmPassword: ACC } })).status, 200);
+  await s.stop('SIGTERM');
+  s = await start({ ...env, ADMIN_PASSWORD: NEW });
+  assert.ok(await s.login(ADMIN.email, ACC), 'Account-page password kept while ADMIN_PASSWORD is unchanged');
   await s.stop('SIGTERM');
 });
 

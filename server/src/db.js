@@ -155,6 +155,20 @@ CREATE TABLE IF NOT EXISTS backup_codes (
   used_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_backup_codes_user ON backup_codes(user_id);
+-- every email the app sends (or saves to the dev outbox): shown in Admin > Email. Only the newest 300 are kept.
+CREATE TABLE IF NOT EXISTS mail_log (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  to_addr TEXT NOT NULL,
+  subject TEXT NOT NULL,
+  kind TEXT NOT NULL DEFAULT 'message',
+  transport TEXT NOT NULL CHECK (transport IN ('dev','smtp')),
+  status TEXT NOT NULL CHECK (status IN ('saved','sent','failed')),
+  error TEXT,
+  link TEXT,
+  html TEXT,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))
+);
+CREATE INDEX IF NOT EXISTS idx_mail_log_created ON mail_log(created_at);
 `);
 
 const defaults = {

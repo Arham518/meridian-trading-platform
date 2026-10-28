@@ -9,6 +9,7 @@ import { startEngine } from './services/trading.js';
 import { ensureAdmin } from './bootstrap.js';
 import { seedDemo } from './seed.js';
 import { ensureMaster, scheduleMasterRebuild, flushMaster } from './services/excel.js';
+import { verifySmtp } from './services/mailer.js';
 
 export async function startServer({ port = config.port, quiet = false } = {}) {
   ensureAdmin();
@@ -23,6 +24,8 @@ export async function startServer({ port = config.port, quiet = false } = {}) {
   startEngine();
   await ensureMaster();
   scheduleMasterRebuild();
+  if (config.smtp) verifySmtp(); // logs loudly when the SMTP login does not work
+  else if (!quiet && config.env === 'production') console.warn('[mail] SMTP_HOST is not set: emails are NOT sent. They are listed in Admin > Email instead.');
 
   await new Promise((resolve) => (config.host ? server.listen(port, config.host, resolve) : server.listen(port, resolve)));
   const actual = server.address().port;

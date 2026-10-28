@@ -1,7 +1,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { NavLink, Link, useLocation, useNavigate, useOutlet } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { LayoutDashboard, BarChart3, CandlestickChart, Radio, History, Database, UserCircle, ShieldCheck, Megaphone, Users, FileSpreadsheet, Settings, LogOut, Menu, X, ArrowUpRight, ArrowDownRight, MailWarning, ShieldAlert, CircleCheck, CircleX, Target, Download } from 'lucide-react';
+import { LayoutDashboard, BarChart3, CandlestickChart, Radio, History, Database, UserCircle, ShieldCheck, Megaphone, Users, FileSpreadsheet, Settings, LogOut, Menu, X, ArrowUpRight, ArrowDownRight, MailWarning, ShieldAlert, CircleCheck, CircleX, Target, Download, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import Logo from './Logo.jsx';
@@ -33,6 +33,7 @@ const ADMIN_NAV = [
   { to: '/admin/signals', label: 'Manage signals', icon: Megaphone },
   { to: '/admin/users', label: 'Users', icon: Users },
   { to: '/admin/records', label: 'All records', icon: FileSpreadsheet },
+  { to: '/admin/email', label: 'Email', icon: Mail },
   { to: '/admin/settings', label: 'Site settings', icon: Settings },
 ];
 

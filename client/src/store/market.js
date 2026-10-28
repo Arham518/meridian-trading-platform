@@ -12,6 +12,7 @@ export const useMarket = create((set, get) => ({
   lastTick: 0,
   signalTick: 0,       // bumped whenever a signal event arrives -> lists refetch
   tradeTick: 0,        // bumped on SL/TP/limit-fill events
+  usersTick: 0,        // admins only: bumped when a user registers, logs in or is edited -> admin user list refetches
   watchlist: [],
 
   applyQuotes(list, status) {
@@ -52,6 +53,7 @@ export const useMarket = create((set, get) => ({
     socket.on('signal:new', (s) => { set({ signalTick: get().signalTick + 1 }); handlers.onSignalNew?.(s); });
     socket.on('signal:update', (s) => { set({ signalTick: get().signalTick + 1 }); handlers.onSignalUpdate?.(s); });
     socket.on('signal:delete', () => set({ signalTick: get().signalTick + 1 }));
+    socket.on('users:changed', () => set({ usersTick: get().usersTick + 1 }));
     socket.on('trade:update', (e) => { set({ tradeTick: get().tradeTick + 1 }); handlers.onTrade?.(e); });
   },
   startPollingFallback() { get().startPolling(); },
