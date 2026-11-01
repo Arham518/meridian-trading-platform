@@ -6,16 +6,26 @@ import { useMarket } from '../store/market.js';
 import { fmtMoney, fmtPrice, pairLabel } from '../lib/format.js';
 import { Field, Spinner, FeedTag } from './ui.jsx';
 
-// Buy / Sell (spot) and Long / Short (position) are separate boxes; both map to the BUY or SELL side of a paper order.
+// Two segmented toggles: [Buy | Sell] and [Long | Short]. Each keeps its own choice; the toggle clicked last
+// decides the order (Buy/Long -> BUY side, Sell/Short -> SELL side of the paper order).
 const PICKS = { buy: ['BUY', 'Buy'], sell: ['SELL', 'Sell'], long: ['BUY', 'Long'], short: ['SELL', 'Short'] };
-function SideBox({ id, pick, setPick, title, hint, price, dec }) {
-  const on = pick === id; const up = PICKS[id][0] === 'BUY';
+function Segmented2({ label, options, value, active, onPick }) {
   return (
-    <button type="button" role="radio" aria-checked={on} onClick={() => setPick(id)}
-      className={clsx('min-w-0 rounded-xl border px-3 py-2 text-left transition-colors', on ? (up ? 'bg-up border-up text-white shadow-sm' : 'bg-down border-down text-white shadow-sm') : 'bg-white/60 border-line hover:border-line-2')}>
-      <span className={clsx('block text-[0.9375rem] font-semibold', !on && (up ? 'up' : 'down'))}>{title}</span>
-      <span className={clsx('block text-[0.8125rem] truncate', price != null && 'num', on ? 'text-white/85' : 'text-mute')}>{price != null ? fmtPrice(price, dec) : hint}</span>
-    </button>
+    <div className="grid grid-cols-2 gap-1 p-1 rounded-xl bg-ink/[0.04] border border-line" role="radiogroup" aria-label={label}>
+      {options.map(([id, title, sub]) => {
+        const on = value === id; const up = PICKS[id][0] === 'BUY';
+        return (
+          <button key={id} type="button" role="radio" aria-checked={on} onClick={() => onPick(id)}
+            className={clsx('min-w-0 rounded-[9px] px-2 py-1.5 text-center border transition-colors',
+              on && active && (up ? 'bg-up border-up text-white shadow-sm' : 'bg-down border-down text-white shadow-sm'),
+              on && !active && (up ? 'bg-up/12 border-up/30 text-up' : 'bg-down/12 border-down/30 text-down'),
+              !on && 'border-transparent text-mute hover:text-ink')}>
+            <span className="block text-[0.9375rem] font-semibold leading-tight">{title}</span>
+            {sub && <span className={clsx('block text-[0.75rem] leading-tight mt-0.5 whitespace-nowrap', /\d/.test(sub) && 'num', on && active ? 'text-white/85' : 'text-mute')}>{sub}</span>}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -23,7 +33,8 @@ const toNum = (v) => (v === '' || v == null ? undefined : Number(v));
 
 export default function OrderPanel({ symbol, balance, onPlaced }) {
   const q = useMarket((s) => s.quotes[symbol]);
-  const [pick, setPick] = useState('buy'); const side = PICKS[pick][0]; const [type, setType] = useState('market');
+  const [spot, setSpot] = useState('buy'); const [pos, setPos] = useState('long'); const [last, setLast] = useState('spot');
+  const pick = last === 'spot' ? spot : pos; const side = PICKS[pick][0]; const [type, setType] = useState('market');
   const [qty, setQty] = useState(''); const [limit, setLimit] = useState(''); const [sl, setSl] = useState(''); const [tp, setTp] = useState('');
   const [busy, setBusy] = useState(false); const [err, setErr] = useState('');
   useEffect(() => { setQty(''); setLimit(''); setSl(''); setTp(''); setErr(''); }, [symbol]);
@@ -54,15 +65,11 @@ export default function OrderPanel({ symbol, balance, onPlaced }) {
 
   return (
     <form onSubmit={submit} className="p-4 space-y-3.5" noValidate>
-      <div className="space-y-2" role="radiogroup" aria-label="Order side">
-        <div className="grid grid-cols-2 gap-2">
-          <SideBox id="buy" pick={pick} setPick={setPick} title="Buy" price={q?.ask ?? q?.price} dec={dec} />
-          <SideBox id="sell" pick={pick} setPick={setPick} title="Sell" price={q?.bid ?? q?.price} dec={dec} />
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <SideBox id="long" pick={pick} setPick={setPick} title="Long" hint="Price goes up" />
-          <SideBox id="short" pick={pick} setPick={setPick} title="Short" hint="Price goes down" />
-        </div>
+      <div className="space-y-2">
+        <Segmented2 label="Buy or sell" value={spot} active={last === 'spot'} onPick={(v) => { setSpot(v); setLast('spot'); }}
+          options={[['buy', 'Buy', fmtPrice(q?.ask ?? q?.price, dec)], ['sell', 'Sell', fmtPrice(q?.bid ?? q?.price, dec)]]} />
+        <Segmented2 label="Long or short" value={pos} active={last === 'pos'} onPick={(v) => { setPos(v); setLast('pos'); }}
+          options={[['long', 'Long', 'Price up'], ['short', 'Short', 'Price down']]} />
       </div>
       <div className="flex items-center justify-between">
         <div className="inline-flex gap-1" role="tablist" aria-label="Order type">
