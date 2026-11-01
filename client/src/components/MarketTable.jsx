@@ -7,7 +7,7 @@ import { useMarket } from '../store/market.js';
 import { pairLabel } from '../lib/format.js';
 import { Price, Change } from './Price.jsx';
 import Sparkline from './Sparkline.jsx';
-import { Segmented, Skeleton, SimTag } from './ui.jsx';
+import { Segmented, Skeleton, FeedTag } from './ui.jsx';
 import { useSparklines } from './Watchlist.jsx';
 
 const TYPES = [{ value: '', label: 'All' }, { value: 'crypto', label: 'Crypto' }, { value: 'forex', label: 'Forex' }, { value: 'commodity', label: 'Gold' }, { value: 'index', label: 'Indices' }, { value: 'stock', label: 'Stocks' }];
@@ -51,7 +51,7 @@ export default function MarketTable({ onSelect, limit = 10 }) {
                 const on = watch.includes(q.symbol);
                 return (
                   <tr key={q.symbol} className="cursor-pointer" onClick={() => onSelect?.(q.symbol)}>
-                    <td className="!pl-4 sm:!pl-5"><div className="flex items-center gap-2.5 sm:gap-3 min-w-0"><AssetIcon symbol={q.symbol} type={q.type} /><div className="min-w-0"><Link to={`/app/trade/${q.symbol}`} onClick={(e) => e.stopPropagation()} className="font-semibold text-[1rem] hover:text-accent-2 flex items-center gap-1.5">{pairLabel(q.symbol)}{q.source === 'simulated' && <span className="hidden sm:inline"><SimTag /></span>}</Link><div className="text-[0.875rem] text-mute truncate max-w-[110px] sm:max-w-[160px]">{q.name}</div></div></div></td>
+                    <td className="!pl-4 sm:!pl-5"><div className="flex items-center gap-2.5 sm:gap-3 min-w-0"><AssetIcon symbol={q.symbol} type={q.type} /><div className="min-w-0"><Link to={`/app/trade/${q.symbol}`} onClick={(e) => e.stopPropagation()} className="font-semibold text-[1rem] hover:text-accent-2 flex items-center gap-1.5">{pairLabel(q.symbol)}<span className="hidden sm:inline"><FeedTag q={q} /></span></Link><div className="text-[0.875rem] text-mute truncate max-w-[110px] sm:max-w-[160px]">{q.name}</div></div></div></td>
                     <td className="r"><Price value={q.price} decimals={q.decimals} className="text-[0.9375rem] font-medium block" /><Change pct={q.changePct} className="text-[0.875rem] font-medium sm:hidden" /></td>
                     <td className="r hidden sm:table-cell"><Change pct={q.changePct} className="text-[0.9375rem] font-medium" /></td>
                     <td className="r hidden md:table-cell"><div className="inline-block"><Sparkline data={spark[q.symbol]} width={88} height={26} up={q.changePct >= 0} /></div></td>

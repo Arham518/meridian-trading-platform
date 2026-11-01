@@ -19,8 +19,8 @@ export async function startServer({ port = config.port, quiet = false } = {}) {
   const server = http.createServer(app);
   initRealtime(server);
 
-  // push live quotes to every connected member (compact payload)
-  onTick((quotes) => broadcastLive('ticks', quotes.map((q) => ({ s: q.symbol, p: q.price, c: q.changePct, h: q.high24, l: q.low24, src: q.source, t: q.ts })).concat([{ status: marketStatus() }])));
+  // push changed quotes to every connected member (compact payload, only symbols that moved)
+  onTick((quotes) => broadcastLive('ticks', quotes.map((q) => ({ s: q.symbol, p: q.price, c: q.changePct, h: q.high24, l: q.low24, b: q.bid, a: q.ask, src: q.source, st: q.stale, t: q.ts })).concat([{ status: marketStatus() }])));
   startMarket();
   startEngine();
   await ensureMaster();

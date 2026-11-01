@@ -171,8 +171,8 @@ export const DATASETS = {
       { header: 'Email', key: 'email', width: 30 },
       { header: 'Event', key: 'event', width: 12 },
       { header: 'Success', key: 'success', width: 10, type: 'bool' },
-      { header: 'IP address', key: 'ip', width: 18 },
-      { header: 'Browser / agent', key: 'user_agent', width: 50 },
+      { header: 'IP address', key: 'ip', width: 18, exportOnly: true },
+      { header: 'Browser / agent', key: 'user_agent', width: 50, exportOnly: true },
     ],
   },
 };

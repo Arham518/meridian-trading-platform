@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Eye, EyeOff, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -16,8 +16,9 @@ import { C } from '../lib/theme.js';
 
 export default function Trade() {
   const { symbol: param } = useParams(); const nav = useNavigate();
-  const known = useMarket((s) => s.quotes);
-  const symbol = param && (known[param] || !Object.keys(known).length) ? param : 'BTCUSDT';
+  const ensure = useMarket((s) => s.ensure);
+  const symbol = param && /^[A-Z0-9]{2,20}$/.test(param) ? param : 'BTCUSDT';
+  useEffect(() => { ensure([symbol]); }, [symbol, ensure]);
   const pf = usePortfolio(); const p = pf.data;
   const [showLevels, setShowLevels] = useState(true); const [confirm, setConfirm] = useState(false);
   const signalTick = useMarket((s) => s.signalTick);

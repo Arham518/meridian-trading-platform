@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import { X } from 'lucide-react';
 import clsx from 'clsx';
@@ -18,6 +18,8 @@ export default function PositionsPanel({ portfolio, onChange, onSelectSymbol }) 
     return { ...t, price, pnl, pnlPct: (pnl / (t.qty * t.entry_price)) * 100 };
   }), [portfolio, quotes]);
   const pending = portfolio?.pending || [];
+  const ensure = useMarket((s) => s.ensure);
+  useEffect(() => { ensure([...(portfolio?.open || []), ...pending].map((t) => t.symbol)); }, [portfolio, ensure]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const close = async (t) => { setBusy(`t${t.id}`); try { const r = await api(`/trading/trades/${t.id}/close`, { method: 'POST' }); toast.success(`Closed ${pairLabel(t.symbol)}: ${fmtSigned(r.pnl)} USD`); onChange?.(); } catch (e) { toast.error(e.message); } finally { setBusy(null); } };
   const cancel = async (o) => { setBusy(`o${o.id}`); try { await api(`/trading/orders/${o.id}`, { method: 'DELETE' }); toast.success('Order cancelled'); onChange?.(); } catch (e) { toast.error(e.message); } finally { setBusy(null); } };

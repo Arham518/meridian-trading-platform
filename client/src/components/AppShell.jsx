@@ -10,9 +10,10 @@ import { Skeleton } from './ui.jsx';
 import AdSlot from './AdSlot.jsx';
 import { useAuth } from '../store/auth.js';
 import { useMarket } from '../store/market.js';
+import { useSymbolSearch } from '../lib/useSymbolSearch.js';
 import { useSettings } from '../store/settings.js';
 import { getToken, api } from '../lib/api.js';
-import { pairLabel, fmtPrice, fmtSigned } from '../lib/format.js';
+import { pairLabel, fmtPrice, fmtSigned, fmtPct } from '../lib/format.js';
 
 const NAV = [
   { group: 'Trade', items: [
@@ -92,7 +93,7 @@ function SidebarContent({ onNavigate, slim = false, onToggle, admin = false }) {
           <div className="flex items-center gap-2 text-[0.8125rem] text-mute px-2">
             <span className={clsx('size-1.5 rounded-full', connected ? 'bg-up live-dot !size-1.5' : 'bg-warn')} />
             <span>{connected ? 'Live feed' : 'Reconnecting'}</span>
-            <span className="ml-auto rounded-full border border-ink/15 bg-white/50 px-2 h-6 grid place-items-center num text-[0.75rem]">{status?.cryptoSource === 'binance' ? 'BINANCE' : 'SIM'}</span>
+            <span className="ml-auto rounded-full border border-ink/15 bg-white/50 px-2 h-6 grid place-items-center num text-[0.75rem]">{status?.cryptoSource === 'simulated' ? 'SIM' : status?.cryptoSource === 'binance' ? 'REAL DATA' : 'CACHED'}</span>
           </div>
           <div className="flex items-center gap-2.5 p-2 rounded-2xl bg-white/55 border border-white/80">
             <Avatar name={user?.name} />
@@ -111,17 +112,13 @@ const Avatar = ({ name, size = 'size-9' }) => (
 
 /** Symbol search in the top bar: type a pair or a name, Enter opens it in the terminal. "/" focuses it. */
 function TopSearch() {
-  const quotes = useMarket((s) => s.quotes); const order = useMarket((s) => s.order); const nav = useNavigate();
+  const nav = useNavigate();
   const [q, setQ] = useState(''); const [open, setOpen] = useState(false); const [hi, setHi] = useState(0); const ref = useRef(null);
   useEffect(() => {
     const onKey = (e) => { if (e.key === '/' && !/input|textarea|select/i.test(document.activeElement?.tagName || '')) { e.preventDefault(); ref.current?.focus(); } };
     document.addEventListener('keydown', onKey); return () => document.removeEventListener('keydown', onKey);
   }, []);
-  const res = useMemo(() => {
-    const t = q.trim().toLowerCase().replace('/', '');
-    if (!t) return [];
-    return order.map((s) => quotes[s]).filter((x) => x && (x.symbol.toLowerCase().includes(t) || (x.name || '').toLowerCase().includes(t))).slice(0, 6);
-  }, [q, quotes, order]);
+  const res = useSymbolSearch(q, { limit: 8 }).results;
   const go = (sym) => { setQ(''); setOpen(false); ref.current?.blur(); nav(`/app/trade/${sym}`); };
   return (
     <div className="relative w-full max-w-[28rem]">
@@ -132,13 +129,13 @@ function TopSearch() {
         role="combobox" aria-expanded={open && res.length > 0} aria-controls="top-search-list" aria-autocomplete="list" />
       <kbd className="hidden md:grid absolute right-3 top-1/2 -translate-y-1/2 place-items-center h-5 min-w-5 px-1 rounded-md border border-line-2 text-[0.75rem] text-dim font-mono">/</kbd>
       {open && res.length > 0 && (
-        <ul id="top-search-list" role="listbox" className="absolute left-0 right-0 top-12 glass glass-strong !rounded-xl p-1.5 z-50">
+        <ul id="top-search-list" role="listbox" className="absolute left-0 right-0 top-12 glass glass-strong glass-pop !rounded-xl p-1.5 z-50">
           {res.map((x, i) => (
             <li key={x.symbol} role="option" aria-selected={i === hi}>
               <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => go(x.symbol)} onMouseEnter={() => setHi(i)}
                 className={clsx('w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-left', i === hi && 'bg-ink/[0.05]')}>
                 <span className="min-w-0"><span className="text-[0.9375rem] font-semibold block">{pairLabel(x.symbol)}</span><span className="text-[0.8125rem] text-mute block truncate">{x.name}</span></span>
-                <span className="text-right shrink-0"><span className="num text-[0.9375rem] block">{fmtPrice(x.price, x.decimals)}</span><span className={clsx('num text-[0.8125rem]', x.changePct >= 0 ? 'up' : 'down')}>{x.changePct >= 0 ? '+' : ''}{x.changePct?.toFixed(2)}%</span></span>
+                <span className="text-right shrink-0"><span className="num text-[0.9375rem] block">{fmtPrice(x.price, x.decimals)}</span><span className={clsx('num text-[0.8125rem]', x.changePct >= 0 ? 'up' : 'down')}>{fmtPct(x.changePct)}</span></span>
               </button>
             </li>
           ))}
@@ -175,7 +172,7 @@ function UserMenu() {
         <ChevronDown size={14} className="text-mute hidden md:block" />
       </button>
       {open && (
-        <div role="menu" className="absolute right-0 top-12 w-56 glass glass-strong !rounded-xl p-1.5 z-50">
+        <div role="menu" className="absolute right-0 top-12 w-56 glass glass-strong glass-pop !rounded-xl p-1.5 z-50">
           <div className="px-3 py-2 border-b border-line mb-1"><div className="text-[0.9375rem] font-semibold truncate">{user?.name}</div><div className="text-[0.8125rem] text-mute truncate">{user?.email}</div></div>
           {[['/app/account', 'Account and security', UserCircle], ['/app/records', 'My records', Database], ...(user?.role === 'admin' ? [['/admin', 'Admin panel', ShieldCheck]] : [])].map(([to, l, I]) => (
             <Link key={to} role="menuitem" to={to} onClick={() => setOpen(false)} className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[0.9375rem] hover:bg-ink/[0.05]"><I size={15} className="text-mute" />{l}</Link>
@@ -347,7 +344,7 @@ export default function AppShell() {
         </AnimatePresence>
       </main>
       <footer className="px-6 pb-28 lg:pb-8 text-center text-[0.875rem] text-dim max-w-3xl mx-auto">
-        <p>Trading involves risk. Signals are educational and not financial advice. Paper trading uses virtual money. Crypto prices come from Binance public data when reachable; other instruments are simulated and labelled SIM.</p>
+        <p>Trading involves risk. Signals are educational and not financial advice. Paper trading uses virtual money. Prices are real market data from free public feeds (Binance for crypto, Yahoo Finance for forex, indices and stocks, gold-api.com for metals). A market without a working feed is labelled NO FEED and never shows a made-up price.</p>
         <p className="mt-2 space-x-3"><Link to="/terms" className="hover:text-ink underline underline-offset-2">Terms of Service</Link><Link to="/privacy" className="hover:text-ink underline underline-offset-2">Privacy Policy</Link><Link to="/risk" className="hover:text-ink underline underline-offset-2">Risk Disclosure</Link></p>
       </footer>
       <BottomNav admin={admin} />

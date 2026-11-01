@@ -15,6 +15,7 @@ export function useQuoteList() {
 }
 
 const tone = (p) => {
+  if (p == null) return 'rgba(120,132,150,0.12)';
   const a = Math.min(Math.abs(p) / 4, 1);
   return p >= 0 ? `rgba(18,161,96,${0.12 + a * 0.42})` : `rgba(224,56,75,${0.12 + a * 0.42})`;
 };
@@ -24,11 +25,11 @@ export const Heatmap = memo(function Heatmap() {
   const list = useQuoteList();
   if (!list.length) return <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">{Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-16" />)}</div>;
   return (
-    <div className="grid gap-1 [grid-template-columns:repeat(auto-fill,minmax(84px,1fr))]">
+    <div className="grid gap-1.5 [grid-template-columns:repeat(auto-fill,minmax(5.6rem,1fr))] sm:[grid-template-columns:repeat(auto-fill,minmax(6.75rem,1fr))]">
       {list.map((q) => (
         <Link key={q.symbol} to={`/app/trade/${q.symbol}`} className="rounded-xl px-2.5 py-2.5 border border-white/60 transition-[filter,transform] hover:brightness-95 hover:-translate-y-px"
           style={{ background: tone(q.changePct) }} title={`${q.name}: ${fmtPct(q.changePct)}`}>
-          <div className="text-[0.875rem] font-semibold truncate">{pairLabel(q.symbol).replace('/USDT', '')}</div>
+          <div className="text-[0.875rem] font-semibold whitespace-nowrap tracking-tight">{pairLabel(q.symbol).replace('/USDT', '')}</div>
           <div className="num text-[0.875rem] text-ink mt-0.5">{fmtPct(q.changePct, 2)}</div>
         </Link>
       ))}

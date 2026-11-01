@@ -4,7 +4,7 @@ import { Search, Star } from 'lucide-react';
 import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { useMarket } from '../store/market.js';
-import { Card, PageHeader, Segmented, EmptyState, SimTag } from '../components/ui.jsx';
+import { Card, PageHeader, Segmented, EmptyState, FeedTag } from '../components/ui.jsx';
 import { Heatmap, Movers, useQuoteList } from '../components/MarketWidgets.jsx';
 import { Price, Change } from '../components/Price.jsx';
 import Sparkline from '../components/Sparkline.jsx';
@@ -20,7 +20,7 @@ export default function Markets() {
   const star = async (s) => { try { await toggle(s); } catch (e) { toast.error(e.message); } };
   return (
     <div>
-      <PageHeader title="Markets" subtitle="Live prices across crypto, forex, gold, indices and stocks. Crypto is live from Binance; other instruments are simulated (SIM)." />
+      <PageHeader title="Markets" subtitle="Live prices across crypto, forex, gold, indices and stocks. Real market data: crypto from Binance, forex, indices and stocks from Yahoo Finance, metals from gold-api.com." />
       <div className="grid lg:grid-cols-[1.4fr_1fr] gap-4 mb-4">
         <Card title="Heat-map" subtitle="Colour intensity shows 24h change"><Heatmap /></Card>
         <Card title="Top movers"><Movers /></Card>
@@ -37,7 +37,7 @@ export default function Markets() {
             <tbody>{rows.map((x) => (
               <tr key={x.symbol}>
                 <td><button onClick={() => star(x.symbol)} aria-label={watch.includes(x.symbol) ? 'Remove from watchlist' : 'Add to watchlist'} className="p-1"><Star size={15} className={clsx(watch.includes(x.symbol) ? 'fill-warn text-warn' : 'text-dim hover:text-mute')} /></button></td>
-                <td><div className="flex items-center gap-2"><div><div className="font-medium">{pairLabel(x.symbol)}</div><div className="text-[0.8125rem] text-mute">{x.name}</div></div>{x.source === 'simulated' && <SimTag />}</div></td>
+                <td><div className="flex items-center gap-2"><div><div className="font-medium">{pairLabel(x.symbol)}</div><div className="text-[0.8125rem] text-mute">{x.name}</div></div><FeedTag q={x} /></div></td>
                 <td className="r"><Price value={x.price} decimals={x.decimals} /></td>
                 <td className="r"><Change pct={x.changePct} /></td>
                 <td className="r num text-mute hidden md:table-cell">{fmtPrice(x.high, x.decimals)}</td>

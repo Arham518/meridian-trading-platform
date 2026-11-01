@@ -2,6 +2,7 @@ import express from 'express';
 import helmet from 'helmet';
 import cors from 'cors';
 import compression from 'compression';
+import rateLimit from 'express-rate-limit';
 import fs from 'node:fs';
 import path from 'node:path';
 import { config } from './config.js';
@@ -59,6 +60,19 @@ export function createApp() {
     origin: (origin, cb) => cb(null, !origin || config.corsOrigins.includes(origin)),
     credentials: true,
   }));
+  // CSRF: the refresh cookie is SameSite=Lax and every other call uses a bearer token; on top of that, any
+  // state-changing request that carries a foreign Origin (or Referer) is refused.
+  app.use('/api', (req, res, next) => {
+    if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+    let src = req.headers.origin || '';
+    if (!src && req.headers.referer) { try { src = new URL(req.headers.referer).origin; } catch { src = 'invalid'; } }
+    if (!src) return next(); // non-browser clients (no Origin) are fine: they cannot ride a cookie
+    const self = `${req.protocol}://${req.get('host')}`;
+    if (src === self || config.corsOrigins.includes(src) || src === config.appUrl) return next();
+    return res.status(403).json({ error: 'Cross-site request blocked' });
+  });
+  // broad per-IP ceiling for the whole API (auth and market routes have tighter limits of their own)
+  app.use('/api', rateLimit({ windowMs: 60 * 1000, limit: Number(process.env.RATE_LIMIT_API) || 600, standardHeaders: 'draft-7', legacyHeaders: false, message: { error: 'Too many requests. Please slow down.' } }));
   app.use(compression());
   app.use(express.json({ limit: '200kb' }));
 

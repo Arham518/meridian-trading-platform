@@ -62,6 +62,14 @@ export const StatusBadge = ({ status }) => { const m = STATUS_META[status] || { 
 export const DirBadge = ({ dir }) => <span className={clsx('badge', dir === 'BUY' ? 'badge-up' : 'badge-down')}>{dir}</span>;
 export const RiskBadge = ({ risk }) => <span className={clsx('badge', risk === 'low' ? 'badge-up' : risk === 'high' ? 'badge-down' : 'badge-warn')}>{risk[0].toUpperCase() + risk.slice(1)} risk</span>;
 export const SimTag = ({ title = 'Simulated market data' }) => <span title={title} className="badge badge-warn !h-[18px] !text-[0.75rem]">SIM</span>;
+/** Data-quality tag for a quote: nothing for a live real price, otherwise NO FEED / DELAYED / SIM. */
+export function FeedTag({ q }) {
+  if (!q) return null;
+  if (q.source === 'simulated') return <SimTag />;
+  if (q.source === 'unavailable' || !(q.price > 0)) return <span title="No free live feed is answering for this market right now" className="badge badge-neutral !h-[18px] !text-[0.75rem]">NO FEED</span>;
+  if (q.stale) return <span title="The live feed is not answering; showing the last real price" className="badge badge-warn !h-[18px] !text-[0.75rem]">DELAYED</span>;
+  return null;
+}
 
 /** One cell of a stat strip (parent has the .stats class: hairline-separated cells, no boxes). */
 export function StatCard({ label, value, sub, tone, loading, icon: Icon }) {

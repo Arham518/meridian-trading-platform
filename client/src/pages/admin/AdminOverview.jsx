@@ -14,6 +14,7 @@ import { C } from '../../lib/theme.js';
 
 const SMETA = { active: ['Active', C.accent], hit_tp1: ['TP1 hit', C.candleUp], hit_tp2: ['TP2 hit', C.candleUp], hit_sl: ['Stopped out', C.candleDown], cancelled: ['Cancelled', C.neutral] };
 const EVENT = (e) => e.replace(/^admin_/, 'admin ').replaceAll('_', ' ');
+const badge = (a) => <span className={`badge ${a.success ? 'badge-up' : 'badge-down'}`}>{a.success ? 'Success' : a.attempts > 1 ? `Failed ×${a.attempts}` : 'Failed'}</span>;
 
 /** Quick actions: the jobs an admin opens the panel for, one tap each. */
 const QUICK = [
@@ -127,17 +128,25 @@ export default function AdminOverview() {
 
       <Card title="Recent sign-in activity" subtitle="Edit opens that user" pad={false} actions={<Link to="/admin/records" className="btn btn-ghost btn-sm"><Layers size={13} />All records</Link>}>
         {!d ? <div className="p-4"><Skeleton className="h-32" /></div> : (
-          <ul className="divide-y divide-[var(--color-line)]" data-testid="activity-list">
-            {d.recentActivity.map((a) => (
-              <li key={a.id} className="grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[minmax(0,1fr)_minmax(0,1.6fr)_minmax(0,1fr)_90px_auto] xl:grid-cols-[230px_minmax(0,1.6fr)_minmax(0,1fr)_90px_auto] items-center gap-x-4 gap-y-1 px-4 sm:px-5 py-2.5 text-[0.9375rem]">
-                <span className="text-mute num text-[0.875rem] order-3 sm:order-none col-span-2 sm:col-span-1">{fmtDate(a.created_at, 'dd MMM, HH:mm:ss')}{a.ip ? ` · ${a.ip}` : ''}</span>
-                <span className="min-w-0 truncate font-medium">{a.user_name ? <>{a.user_name} <span className="text-mute font-normal">{a.email}</span></> : a.email}</span>
-                <span className="hidden sm:block capitalize text-mute truncate">{EVENT(a.event)}</span>
-                <span className="hidden sm:block"><span className={`badge ${a.success ? 'badge-up' : 'badge-down'}`}>{a.success ? 'Success' : 'Failed'}</span></span>
-                <span className="justify-self-end">{a.user_id ? <button className="btn btn-ghost btn-sm" onClick={() => setEdit(a.user_id)} aria-label={`Edit ${a.email}`}><Pencil size={12} />Edit</button> : <span className="text-[0.8125rem] text-dim">no account</span>}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="overflow-x-auto">
+            <div className="hidden sm:grid grid-cols-[150px_minmax(0,1.7fr)_minmax(0,1fr)_120px_96px] items-center gap-x-5 px-5 py-2.5 border-b border-line label !text-[0.75rem]" aria-hidden>
+              <span>Time</span><span>User</span><span>Event</span><span>Result</span><span className="text-right">Action</span>
+            </div>
+            <ul className="divide-y divide-[var(--color-line)]" data-testid="activity-list">
+              {d.recentActivity.map((a) => (
+                <li key={a.id} className="grid grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[150px_minmax(0,1.7fr)_minmax(0,1fr)_120px_96px] items-center gap-x-5 gap-y-1.5 px-4 sm:px-5 py-3.5 text-[0.9375rem] leading-snug">
+                  <span className="hidden sm:block text-mute num text-[0.875rem] whitespace-nowrap">{fmtDate(a.created_at, 'dd MMM, HH:mm:ss')}</span>
+                  <span className="min-w-0">
+                    {a.user_name ? <><span className="block font-semibold truncate">{a.user_name}</span><span className="block text-mute text-[0.875rem] truncate">{a.email}</span></> : <span className="block font-medium truncate">{a.email}</span>}
+                  </span>
+                  <span className="hidden sm:block capitalize text-mute truncate">{EVENT(a.event)}</span>
+                  <span className="hidden sm:block">{badge(a)}</span>
+                  <span className="justify-self-end">{a.user_id ? <button className="btn btn-ghost btn-sm" onClick={() => setEdit(a.user_id)} aria-label={`Edit ${a.email}`}><Pencil size={12} />Edit</button> : <span className="text-[0.8125rem] text-dim whitespace-nowrap">No account</span>}</span>
+                  <span className="sm:hidden col-span-2 flex items-center gap-2 text-[0.875rem] text-mute min-w-0">{badge(a)}<span className="capitalize truncate">{EVENT(a.event)}</span><span className="num ml-auto whitespace-nowrap">{fmtDate(a.created_at, 'dd MMM, HH:mm')}</span></span>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </Card>
       <p className="text-[0.875rem] text-dim flex items-center gap-1.5"><Wifi size={12} />{d ? `${d.online} live connection${d.online === 1 ? '' : 's'}` : ''}</p>

@@ -7,7 +7,7 @@ import { api } from '../lib/api.js';
 import { pairLabel } from '../lib/format.js';
 import { Price, Change } from './Price.jsx';
 import Sparkline from './Sparkline.jsx';
-import { EmptyState, SimTag } from './ui.jsx';
+import { EmptyState, FeedTag } from './ui.jsx';
 
 let sparkCache = null;
 export function useSparklines() {
@@ -23,7 +23,7 @@ const Row = memo(function Row({ symbol, active, onSelect, onRemove, spark }) {
     <li className={clsx('group flex items-center gap-2 px-3 py-2 border-b border-line last:border-0 cursor-pointer transition-colors hover:bg-ink/[0.03]', active && 'bg-ink/[0.05] shadow-[inset_2px_0_0_var(--color-accent)]')} onClick={() => onSelect?.(symbol)}>
       <button className="p-1 -ml-1 text-accent" onClick={(e) => { e.stopPropagation(); onRemove(symbol); }} aria-label={`Remove ${symbol} from watchlist`} title="Remove from watchlist"><Star size={13} className="fill-accent" /></button>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5 text-sm font-medium">{pairLabel(symbol)}{q.source === 'simulated' && <SimTag />}</div>
+        <div className="flex items-center gap-1.5 text-sm font-medium">{pairLabel(symbol)}<FeedTag q={q} /></div>
         <div className="text-[0.8125rem] text-dim truncate">{q.name}</div>
       </div>
       <div className="hidden sm:block"><Sparkline data={spark} width={64} height={24} up={q.changePct >= 0} /></div>

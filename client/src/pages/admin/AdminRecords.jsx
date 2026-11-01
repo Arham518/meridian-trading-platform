@@ -24,7 +24,7 @@ const cell = (col) => (c) => {
   }
 };
 const baseFields = (t) => [
-  { key: 'q', type: 'search', label: t === 'users' ? 'Search name or email' : t === 'activity' ? 'Search email or IP' : 'Search…' },
+  { key: 'q', type: 'search', label: t === 'users' ? 'Search name or email' : t === 'activity' ? 'Search email' : 'Search…' },
   ...(t === 'signals' ? [{ key: 'status', type: 'select', label: 'All statuses', options: [['active', 'Active'], ['hit_tp1', 'TP1 hit'], ['hit_tp2', 'TP2 hit'], ['hit_sl', 'Stopped'], ['cancelled', 'Cancelled']] }] : []),
   ...(t === 'trades' ? [{ key: 'status', type: 'select', label: 'Open & closed', options: [['open', 'Open'], ['closed', 'Closed']] }, { key: 'result', type: 'select', label: 'Win & loss', options: [['win', 'Winners'], ['loss', 'Losers']] }] : []),
   ...(t === 'activity' ? [{ key: 'success', type: 'select', label: 'Any result', options: [['1', 'Success'], ['0', 'Failed']] }] : []),

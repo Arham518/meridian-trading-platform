@@ -6,7 +6,7 @@ import { sessionActive } from './services/security.js';
 /** Short-lived access token, bound to a revocable DB session (sid). */
 export const signToken = (user, sid) => jwt.sign({ sub: user.id, role: user.role, sid, typ: 'access' }, config.jwtSecret, { expiresIn: config.accessTtl });
 export const signPurposeToken = (user, typ, expiresIn = '5m') => jwt.sign({ sub: user.id, typ }, config.jwtSecret, { expiresIn });
-export const verifyToken = (token) => jwt.verify(token, config.jwtSecret);
+export const verifyToken = (token) => jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] });
 
 export const publicUser = (u) => u && ({
   id: u.id, name: u.name, username: u.username || null, email: u.email, role: u.role, status: u.status, balance: u.balance,

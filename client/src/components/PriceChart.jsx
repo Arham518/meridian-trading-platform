@@ -101,7 +101,7 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
       S.vol.setData(r.candles.map((c) => ({ time: c.time, value: c.volume, color: c.close >= c.open ? C.upVol : C.downVol })));
       applyIndicators(true);
       chartRef.current.timeScale().fitContent(); chartRef.current.timeScale().scrollToPosition(6, false);
-      setState({ loading: false, error: null, source: r.source });
+      setState({ loading: false, error: null, source: r.source, stale: !!r.stale });
     } catch (e) { if (e.name !== 'AbortError') setState({ loading: false, error: e.message, source: null }); }
   }, [symbol, interval, applyIndicators]);
 
@@ -124,8 +124,9 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
       const q = m.quotes[symbol]; const d = data.current; const S = s.current;
       if (!q || !d.length || !S.candles || q.price === lastPrice) return;
       lastPrice = q.price;
-      const step = STEP[interval]; const bucket = Math.floor(Date.now() / 1000 / step) * step; const last = d[d.length - 1];
+      const step = STEP[interval]; const bucket = Math.floor((q.ts || Date.now()) / 1000 / step) * step; // market time: closed markets do not grow empty candles const last = d[d.length - 1];
       let c;
+      if (bucket < last.time) return;
       if (bucket > last.time) { c = { time: bucket, open: last.close, high: Math.max(last.close, q.price), low: Math.min(last.close, q.price), close: q.price, volume: 0 }; d.push(c); }
       else { c = { ...last, close: q.price, high: Math.max(last.high, q.price), low: Math.min(last.low, q.price) }; d[d.length - 1] = c; }
       S.candles.update(c); S.line.update({ time: c.time, value: c.close }); S.area.update({ time: c.time, value: c.close });
@@ -163,7 +164,7 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
             {menu && (
               <>
                 <div className="fixed inset-0 z-30" onClick={() => setMenu(false)} aria-hidden />
-                <div className="absolute right-0 z-40 mt-2 w-52 glass glass-strong p-2">
+                <div className="absolute right-0 z-40 mt-2 w-52 glass glass-strong glass-pop p-2">
                   {[['ma', 'MA (20)', C.ma], ['ema', 'EMA (50)', C.ema], ['bb', 'Bollinger (20, 2)', C.mute], ['vol', 'Volume', C.dim], ['rsi', 'RSI (14)', C.rsi]].map(([k, label, col]) => (
                     <label key={k} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-ink/[0.05] cursor-pointer text-sm">
                       <input type="checkbox" className="accent-[#1a5ad7] size-3.5" checked={!!ind[k]} onChange={() => tgl(k)} />
@@ -189,8 +190,11 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
         )}
         <div className="absolute right-3 top-2 z-10 flex items-center gap-1.5 pointer-events-none">
           {state.source === 'binance' && <span className="badge badge-up !h-[18px] !text-[0.75rem]"><span className="live-dot !size-1.5" />Binance live</span>}
+          {state.source === 'yahoo' && <span className="badge badge-up !h-[18px] !text-[0.75rem]"><span className="live-dot !size-1.5" />Real data · Yahoo Finance</span>}
+          {state.stale && <span className="badge badge-warn !h-[18px] !text-[0.75rem]">DELAYED</span>}
           {state.source === 'simulated' && <SimTag title="Simulated data: the live market feed is unavailable for this instrument" />}
         </div>
+        {!state.loading && !state.error && state.source === 'unavailable' && <div className="absolute inset-0 z-20 grid place-items-center"><p className="glass glass-pop !rounded-xl px-4 py-3 text-[0.9375rem] text-mute text-center max-w-[18rem]">No free live feed is answering for this market right now. We never show made-up prices.</p></div>}
         {state.loading && <div className="absolute inset-0 z-20 grid place-items-center bg-bg/50"><Spinner className="text-accent-2" /></div>}
         {state.error && <div className="absolute inset-0 z-20 grid place-items-center bg-bg/80"><ErrorState message={state.error} onRetry={() => load()} /></div>}
       </div>

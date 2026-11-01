@@ -22,7 +22,7 @@ const PriceChart = lazy(() => import('../components/PriceChart.jsx'));
 
 const FAQ = [
   ['Is this real-money trading?', 'No. Nothing on this site sends an order to a broker or exchange. The paper account uses virtual money, and signals are published for education.'],
-  ['Where do the prices come from?', 'Crypto prices and candles come from the public Binance market-data API. Forex, gold, indices and stocks are simulated, and every simulated quote carries a SIM label. If Binance cannot be reached, crypto falls back to simulation and is labelled in the same way.'],
+  ['Where do the prices come from?', 'Every price is real market data from free public feeds: Binance for crypto, Yahoo Finance for forex, indices and stocks, and gold-api.com for metals. If a feed stops answering, the last real price stays on screen marked DELAYED, and a market with no data is marked NO FEED. We never invent prices.'],
   ['How is a signal result worked out?', 'When the desk closes a signal, the result is calculated from the entry price and the level that was reached: first target, second target or stop loss. The number is stored with the signal. Win rate and totals are computed from those stored rows.'],
   ['Can I take my records with me?', 'Yes. Every history table has a Download Excel button, and your account page has one workbook with trades, orders, watchlist and sign-in activity.'],
   ['Why do I have to confirm my email?', 'Signals and paper trading unlock after you open the link we send. It keeps fake sign-ups out and makes sure password resets reach you.'],
@@ -275,11 +275,11 @@ function Parts() {
 
 /* ------------------------------------------------------------------ data honesty + steps + FAQ */
 function DataSources() {
-  const rows = [['Bitcoin, Ether and other crypto pairs', 'Binance public market-data API', 'Live', ''], ['EUR/USD, GBP/USD, USD/JPY, AUD/USD', 'Simulated random walk', 'SIM', 'sim'], ['Gold, S&P 500, Nasdaq 100', 'Simulated random walk', 'SIM', 'sim'], ['Apple, Tesla, Nvidia', 'Simulated random walk', 'SIM', 'sim'], ['Crypto when Binance is unreachable', 'Simulated fallback, switched on automatically', 'SIM', 'sim']];
+  const rows = [['All Binance USDT crypto pairs (500+)', 'Binance public market-data API', 'Live', ''], ['Forex majors, minors and popular exotics', 'Yahoo Finance public quotes', 'Real', ''], ['Gold, silver, platinum, palladium', 'gold-api.com spot price', 'Real', ''], ['S&P 500, Nasdaq 100, Dow, DAX, FTSE, Nikkei and more', 'Yahoo Finance public quotes', 'Real', ''], ['Apple, Tesla, Nvidia and 40 popular stocks', 'Yahoo Finance public quotes (exchange delay may apply)', 'Real', ''], ['Any market whose feed is down', 'Last real price kept and marked, or no price at all', 'Delayed / No feed', 'sim']];
   return (
     <section id="data" className="scroll-mt-16">
       <div className="max-w-[var(--page-max)] mx-auto px-5 sm:px-8 py-20 sm:py-24 grid lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-10 lg:gap-20">
-        <motion.div {...reveal}><p className="eyebrow">Data sources</p><h2 className="display mt-4 text-[1.75rem] sm:text-[2.43rem]">What is real and what is simulated.</h2></motion.div>
+        <motion.div {...reveal}><p className="eyebrow">Data sources</p><h2 className="display mt-4 text-[1.75rem] sm:text-[2.43rem]">Where every price comes from.</h2></motion.div>
         <motion.div {...reveal} className="glass p-5 sm:p-6 min-w-0 overflow-x-auto">
           <table className="tbl"><thead><tr><th className="!pl-0">Instruments</th><th>Source</th><th className="r !pr-0">Label</th></tr></thead>
             <tbody>{rows.map(([a, b, c, k]) => <tr key={a}><td className="!pl-0 !whitespace-normal">{a}</td><td className="text-mute !whitespace-normal">{b}</td><td className="r !pr-0">{k ? <span className="badge badge-warn">{c}</span> : <span className="badge badge-up">{c}</span>}</td></tr>)}</tbody></table>
@@ -389,7 +389,7 @@ export default function Landing() {
         <div className="max-w-[var(--page-max)] mx-auto px-5 sm:px-8 pt-12 pb-10 grid md:grid-cols-[minmax(0,0.6fr)_minmax(0,1.4fr)] gap-8">
           <div><Logo name={siteName} /><p className="mt-3 text-[0.9375rem] text-mute max-w-xs">Signals, live charts and a paper account, with every record stored and exportable.</p>
             <nav className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-[0.9375rem]" aria-label="Legal"><Link to="/terms" className="text-mute hover:text-ink">Terms of Service</Link><Link to="/privacy" className="text-mute hover:text-ink">Privacy Policy</Link><Link to="/risk" className="text-mute hover:text-ink">Risk Disclosure</Link></nav></div>
-          <p className="text-[0.875rem] text-dim leading-relaxed"><b className="text-mute font-semibold">Risk disclosure.</b> Trading foreign exchange, cryptocurrencies, indices and stocks carries a high level of risk and can result in the loss of all invested capital. Signals on this site are educational and are not personal financial advice. Paper-trading results are simulated and ignore real liquidity, slippage and fees. Prices for non-crypto instruments are simulated and labelled SIM. &copy; {new Date().getFullYear()} {siteName}.</p>
+          <p className="text-[0.875rem] text-dim leading-relaxed"><b className="text-mute font-semibold">Risk disclosure.</b> Trading foreign exchange, cryptocurrencies, indices and stocks carries a high level of risk and can result in the loss of all invested capital. Signals on this site are educational and are not personal financial advice. Paper-trading results are simulated and ignore real liquidity, slippage and fees. Prices come from free public feeds and can be delayed. &copy; {new Date().getFullYear()} {siteName}.</p>
         </div>
       </footer>
     </div>

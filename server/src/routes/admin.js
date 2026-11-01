@@ -38,19 +38,34 @@ router.get('/stats', wrap((req, res) => {
     failedLogins24h: one('SELECT COUNT(*) n FROM login_activity WHERE success=0 AND created_at >= ?', day).n,
     online: connectedCount(),
     signups,
-    recentActivity: db.prepare(`SELECT a.*, COALESCE(a.user_id, u.id) AS user_id, u.name AS user_name, u.role AS user_role, u.status AS user_status
+    recentActivity: collapseFailures(db.prepare(`SELECT a.id, a.event, a.success, a.email, a.created_at, COALESCE(a.user_id, u.id) AS user_id, u.name AS user_name, u.role AS user_role, u.status AS user_status
       FROM login_activity a LEFT JOIN users u ON u.id = COALESCE(a.user_id, (SELECT id FROM users WHERE email = a.email COLLATE NOCASE))
-      ORDER BY a.id DESC LIMIT 8`).all(),
+      ORDER BY a.id DESC LIMIT 80`).all(), 8),
     recentUsers: db.prepare('SELECT id, name, email, role, status, email_verified_at, created_at, last_login_at FROM users ORDER BY created_at DESC, id DESC LIMIT 5').all(),
     pendingVerification: one('SELECT COUNT(*) n FROM users WHERE email_verified_at IS NULL').n,
   });
 }));
 
+/** Repeated failed attempts for the same email + event become one row: newest time, attempt count. */
+function collapseFailures(rows, limit) {
+  const out = []; const seen = new Map();
+  for (const r of rows) {
+    if (!r.success) {
+      const k = `${String(r.email).toLowerCase()}|${r.event}`;
+      const g = seen.get(k);
+      if (g) { g.attempts += 1; continue; }
+      const row = { ...r, attempts: 1 }; seen.set(k, row); out.push(row);
+    } else out.push({ ...r, attempts: 1 });
+    if (out.length >= limit) break;
+  }
+  return out;
+}
+
 router.get('/records/:type', wrap((req, res) => {
   const type = req.params.type;
   if (!DATASETS[type]) return res.status(404).json({ error: 'Unknown record type' });
   const r = queryDataset(type, req.query, {}, req.query);
-  res.json({ ...r, columns: DATASETS[type].columns.map(({ header, key, type: t }) => ({ header, key, type: t || 'text' })) });
+  res.json({ ...r, columns: DATASETS[type].columns.filter((c) => !c.exportOnly).map(({ header, key, type: t }) => ({ header, key, type: t || 'text' })) });
 }));
 
 router.get('/users', wrap((req, res) => res.json(queryDataset('users', req.query, {}, req.query))));
