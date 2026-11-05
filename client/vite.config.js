@@ -46,5 +46,5 @@ export default defineConfig({
         ...landing.map((f) => ({ tag: 'link', attrs: { rel: 'modulepreload', href: `/${f}`, crossorigin: '' }, injectTo: 'head' })),
       ] };
     } } },
-    { name: 'meridian-html-placeholders', apply: 'serve', transformIndexHtml: (html) => html.replaceAll('__APP_URL__', 'http://localhost:5173').replaceAll('__SITE_NAME__', 'Meridian') }],
+    { name: 'meridian-html-placeholders', apply: 'serve', transformIndexHtml: (html) => html.replaceAll('__APP_URL__', 'http://localhost:5173').replaceAll('__SITE_NAME__', 'Crypto Decoder') }],
 });

@@ -195,7 +195,7 @@ router.post('/users/:id/password', wrap((req, res) => {
 router.get('/email', wrap((req, res) => res.json(mailStatus())));
 router.post('/email/check', wrap(async (req, res) => res.json({ ...mailStatus(), check: await verifySmtp() })));
 router.post('/test-email', wrap(async (req, res) => {
-  const site = getSettings().site_name || 'Meridian';
+  const site = getSettings().site_name || 'Crypto Decoder';
   const when = new Date().toUTCString();
   const html = `<div style="font-family:Arial,sans-serif;font-size:14px;color:#222"><h2 style="margin:0 0 12px">${site}: test email</h2><p>This is a test email from the admin panel, sent ${when}.</p><p>If you can read this, email delivery works.</p></div>`;
   const r = await sendMail({ to: req.user.email, subject: `${site}: test email`, html, text: `Test email from the ${site} admin panel, sent ${when}. Email delivery works.`, kind: 'test' });

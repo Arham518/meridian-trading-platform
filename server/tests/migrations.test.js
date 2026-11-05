@@ -9,7 +9,7 @@ import { boot, ADMIN } from './helpers.js';
 let t;
 after(async () => { await t?.close(); });
 
-test("startup migration fixes exactly 'Meditaian' -> 'Meridian' once", async () => {
+test("startup migrations rename 'Meditaian' / 'Meridian' -> 'Crypto Decoder' once", async () => {
   // prepare a database that has the typo, before the server opens it
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'meridian-mig-'));
   if (!process.env.TEST_DATABASE_URL) {
@@ -20,12 +20,15 @@ test("startup migration fixes exactly 'Meditaian' -> 'Meridian' once", async () 
   }
   t = await boot({ DATA_DIR: dir, MASTER_REBUILD_MIN_MS: '600000', MASTER_REBUILD_DELAY_MS: '600000' });
   const { db, getSettings, setSetting } = await import('../src/db.js');
-  if (!process.env.TEST_DATABASE_URL) assert.equal(getSettings().site_name, 'Meridian');
+  if (!process.env.TEST_DATABASE_URL) assert.equal(getSettings().site_name, 'Crypto Decoder');
   assert.ok(getSettings().migration_site_name_typo, 'migration recorded');
+  assert.ok(getSettings().migration_site_name_crypto_decoder, 'rebrand migration recorded');
   // other names are never touched, and the fix does not run again
   setSetting('site_name', 'Meditaian');
   assert.equal(db.prepare("SELECT value FROM settings WHERE key = 'site_name'").get().value, 'Meditaian');
   setSetting('site_name', 'Meridian');
+  assert.equal(getSettings().site_name, 'Meridian', 'rebrand does not re-run');
+  setSetting('site_name', 'Crypto Decoder');
 });
 
 test('Excel master rebuild is throttled; download always includes pending changes', async () => {

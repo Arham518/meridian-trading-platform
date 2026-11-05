@@ -41,7 +41,7 @@ export function verifyTotp(secretB32, code, lastStep = 0, t = Date.now()) {
   return null;
 }
 export const newSecret = () => base32(crypto.randomBytes(20));
-export const otpauthUrl = (secret, email, issuer = 'Meridian') => `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(email)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
+export const otpauthUrl = (secret, email, issuer = 'Crypto Decoder') => `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(email)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=30`;
 export const qrDataUrl = (text) => QRCode.toDataURL(text, { margin: 1, width: 220, color: { dark: '#ecebe6', light: '#00000000' } });
 
 // the TOTP secret is encrypted at rest (AES-256-GCM, key derived from the server secret)

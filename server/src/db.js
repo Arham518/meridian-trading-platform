@@ -173,7 +173,7 @@ CREATE INDEX IF NOT EXISTS idx_mail_log_created ON mail_log(created_at);
 `);
 
 const defaults = {
-  site_name: 'Meridian',
+  site_name: 'Crypto Decoder',
   tagline: 'Trade signals, live charts and paper trading in one place.',
   signals_public: 'true',
   hero_video_url: '',
@@ -190,6 +190,8 @@ const once = (key, fn) => {
 };
 // The live site name was saved with a typo. Fix exactly that value; any other custom name is left alone.
 once('migration_site_name_typo', () => db.prepare("UPDATE settings SET value = 'Meridian' WHERE key = 'site_name' AND value = 'Meditaian'").run());
+// Rebrand: the product is now Crypto Decoder. Only the old default name (or its typo) is replaced; a custom name stays.
+once('migration_site_name_crypto_decoder', () => db.prepare("UPDATE settings SET value = 'Crypto Decoder' WHERE key = 'site_name' AND value IN ('Meridian', 'Meditaian')").run());
 
 // Hosted mode: save a fresh full copy (it already contains the migrations above) and start recording changes.
 if (persist.enabled) await persist.attach(db, { uploadDir: config.uploadDir, dbPath: config.dbPath });

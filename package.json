@@ -2,7 +2,7 @@
   "name": "meridian-trading-platform",
   "version": "1.0.0",
   "private": true,
-  "description": "Full-stack trading signals + paper-trading platform (React + Vite, Node + Express + SQLite)",
+  "description": "Crypto Decoder: full-stack trading signals + paper-trading platform (React + Vite, Node + Express + SQLite)",
   "type": "module",
   "workspaces": [
     "client",

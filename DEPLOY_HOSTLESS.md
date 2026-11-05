@@ -1,6 +1,6 @@
-# Deploying Meridian on Hostless
+# Deploying Crypto Decoder on Hostless
 
-Meridian runs as **one app** on Hostless: `npm run build` builds the React client, and `npm start` starts Express,
+Crypto Decoder runs as **one app** on Hostless: `npm run build` builds the React client, and `npm start` starts Express,
 which serves the client, the `/api` routes and socket.io (live signals) on `$PORT`, bound to `0.0.0.0`.
 
 Free Hostless apps get only a **temporary disk**. Persistent volumes need a payment method. So the data is kept in a
@@ -70,7 +70,7 @@ Do **not** set `PORT`, because Hostless sets it. `CORS_ORIGINS` is not needed be
    ```
    hostless env set --app meridian-trading-platform NODE_ENV=production JWT_SECRET=<generated> ADMIN_EMAIL=<you> ADMIN_PASSWORD=<strong> SEED_DEMO=false APP_URL=https://<app-url>
    hostless env set --app meridian-trading-platform DATABASE_URL="<connection string>"   # skip if you linked it in step 4
-   hostless env set --app meridian-trading-platform SMTP_HOST=smtp.gmail.com SMTP_PORT=587 SMTP_USER=<gmail> SMTP_PASS=<app password> MAIL_FROM="Meridian <gmail>" --deploy
+   hostless env set --app meridian-trading-platform SMTP_HOST=smtp.gmail.com SMTP_PORT=587 SMTP_USER=<gmail> SMTP_PASS=<app password> MAIL_FROM="Crypto Decoder <gmail>" --deploy
    hostless deploy --app meridian-trading-platform --wait
    hostless logs --app meridian-trading-platform -f
    ```

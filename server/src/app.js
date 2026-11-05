@@ -98,7 +98,7 @@ export function createApp() {
     let html = null;
     const page = () => {
       if (!html || config.env !== 'production') html = fs.readFileSync(indexFile, 'utf8');
-      const name = escapeHtml(getSettings().site_name || 'Meridian');
+      const name = escapeHtml(getSettings().site_name || 'Crypto Decoder');
       return html.replaceAll('__APP_URL__', config.appUrl).replaceAll('__SITE_NAME__', name);
     };
     // only page routes get the app shell; a missing file (/foo.xml, /x.txt, /a.js) is a real 404

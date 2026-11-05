@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { api } from '../lib/api.js';
 
 export const useSettings = create((set) => ({
-  siteName: 'Meridian',
+  siteName: 'Crypto Decoder',
   tagline: 'Trade signals, live charts and paper trading in one place.',
   heroVideoUrl: null,
   heroVideo: null,   // { kind: 'file' | 'youtube' | 'vimeo', src }

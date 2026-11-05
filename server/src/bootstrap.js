@@ -31,7 +31,7 @@ export function ensureAdmin({ email = config.adminEmail, password = config.admin
     const generated = `Mx${crypto.randomBytes(5).toString('hex')}#${crypto.randomInt(10, 99)}`;
     createAdmin(email, generated);
     const file = path.join(config.dataDir, 'admin-credentials.txt');
-    fs.writeFileSync(file, `Meridian admin login (generated on first run)\nEmail:    ${email}\nPassword: ${generated}\n\nChange it after logging in: Account -> Change password.\nDelete this file once you have saved the password.\n`, { mode: 0o600 });
+    fs.writeFileSync(file, `Crypto Decoder admin login (generated on first run)\nEmail:    ${email}\nPassword: ${generated}\n\nChange it after logging in: Account -> Change password.\nDelete this file once you have saved the password.\n`, { mode: 0o600 });
     banner('ADMIN ACCOUNT CREATED', email, generated, file);
     return { email, password: generated, generated: true, created: true };
   }

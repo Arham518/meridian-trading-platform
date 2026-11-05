@@ -66,7 +66,7 @@ export const config = {
   rateLimitMail: Number(process.env.RATE_LIMIT_MAIL) || 12,
   // --- email + sessions ---
   appUrl: (process.env.APP_URL || `http://localhost:${Number(process.env.PORT) || 4000}`).replace(/\/+$/, ''),
-  mailFrom: process.env.MAIL_FROM || 'Meridian <no-reply@meridian.local>',
+  mailFrom: process.env.MAIL_FROM || 'Crypto Decoder <no-reply@cryptodecoder.local>',
   smtp: process.env.SMTP_HOST ? {
     host: process.env.SMTP_HOST, port: Number(process.env.SMTP_PORT) || 587,
     secure: process.env.SMTP_SECURE ? process.env.SMTP_SECURE === 'true' : Number(process.env.SMTP_PORT) === 465,

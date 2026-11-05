@@ -1,6 +1,6 @@
 <div align="center">
 
-# Meridian
+# Crypto Decoder
 
 **A full-stack trading signals and paper-trading platform.**
 Admins publish signals, members receive them live, practise on a virtual account, and export every record to Excel.
@@ -9,7 +9,7 @@ React 19 · Vite · Node · Express · SQLite · WebSockets · Excel export
 
 </div>
 
-![Meridian landing page](screenshots/desktop-01-landing-hero.png)
+![Crypto Decoder landing page](screenshots/desktop-01-landing-hero.png)
 
 > **Status:** full-stack demo you can run locally. Trading is **paper only (virtual money)** — nothing places real broker orders.
 > Crypto candles/prices use the public Binance API; forex, gold, indices and stocks are **simulated** and labelled **SIM** in the UI.
@@ -17,9 +17,9 @@ React 19 · Vite · Node · Express · SQLite · WebSockets · Excel export
 
 ---
 
-## Why Meridian
+## Why Crypto Decoder
 
-Most signal groups run on chat screenshots and spreadsheets. Meridian puts the whole workflow in one place: an admin posts a signal with entry, stop loss and targets, every member sees it instantly on a live chart, and every signal, trade and login is stored and exportable. Trading is **paper only (virtual money)**. Nothing here places real orders.
+Most signal groups run on chat screenshots and spreadsheets. Crypto Decoder puts the whole workflow in one place: an admin posts a signal with entry, stop loss and targets, every member sees it instantly on a live chart, and every signal, trade and login is stored and exportable. Trading is **paper only (virtual money)**. Nothing here places real orders.
 
 ## What works now vs. simulated vs. planned
 
@@ -37,7 +37,8 @@ Most signal groups run on chat screenshots and spreadsheets. Meridian puts the w
 ## Features
 
 **For members**
-- Live candlestick charts with symbol and timeframe switching, plus MA, EMA, Bollinger Bands, volume and RSI
+- TradingView-style chart builder (built on lightweight-charts): chart-type menu (candles, hollow candles, bars, Heikin Ashi, line, line with markers, area, baseline, columns), symbol and timeframe switching, MA, EMA, Bollinger Bands, volume and RSI
+- Chart settings: candle body / border / wick colours, colour bars by previous close, price precision — saved in the browser
 - Real-time signal cards and toast alerts over WebSockets
 - Paper-trading terminal: market and limit orders, stop loss and take profit, live profit and loss, trade history
 - Watchlist saved per user, market movers, heat map and crypto news
@@ -162,7 +163,7 @@ SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=you@gmail.com
 SMTP_PASS=your-16-character-app-password
-MAIL_FROM="Meridian <you@gmail.com>"
+MAIL_FROM="Crypto Decoder <you@gmail.com>"
 ```
 
 Any SMTP provider works the same way (Brevo, Mailgun, Postmark, Amazon SES, Zoho). Restart the server after editing `.env`.
@@ -193,7 +194,7 @@ the API and socket.io on `$PORT`. Step-by-step instructions for Hostless are in 
 
 ## Disclaimer
 
-Meridian is an educational project. Signals are not financial advice, trading involves risk, and all trading in the app is simulated with virtual money. Prices for non-crypto markets are simulated and marked **SIM**.
+Crypto Decoder is an educational project. Signals are not financial advice, trading involves risk, and all trading in the app is simulated with virtual money. Prices for non-crypto markets are simulated and marked **SIM**.
 
 ## Security
 

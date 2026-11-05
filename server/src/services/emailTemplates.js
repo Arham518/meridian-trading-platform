@@ -7,7 +7,7 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&l
 const MARK = '<svg width="28" height="28" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle"><circle cx="16" cy="16" r="12.5" stroke="#d9a441" stroke-width="1.6" fill="none"/><path d="M16 1.5v6M16 24.5v6" stroke="#d9a441" stroke-width="1.6"/><rect x="12.4" y="9.2" width="7.2" height="11.6" fill="#d9a441"/></svg>';
 
 function layout({ preheader, title, intro, button, link, outro, note }) {
-  const name = esc(getSettings().site_name || 'Meridian');
+  const name = esc(getSettings().site_name || 'Crypto Decoder');
   return `<!doctype html><html><body style="margin:0;background:#141413;font-family:-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;color:#ecebe6">
 <span style="display:none;max-height:0;overflow:hidden">${esc(preheader)}</span>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#141413;padding:32px 12px"><tr><td align="center">

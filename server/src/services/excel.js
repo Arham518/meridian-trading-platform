@@ -72,7 +72,7 @@ export function addSheet(wb, name, columns, rows) {
 
 function newWorkbook(title) {
   const wb = new ExcelJS.Workbook();
-  wb.creator = getSettings().site_name || 'Meridian';
+  wb.creator = getSettings().site_name || 'Crypto Decoder';
   wb.created = new Date();
   wb.title = title;
   return wb;

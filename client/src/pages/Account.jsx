@@ -99,7 +99,7 @@ function PasswordSection() {
 function BackupCodes({ codes, onDone }) {
   const text = codes.join('\n');
   const copy = () => navigator.clipboard?.writeText(text).then(() => toast.success('Copied'), () => toast.error('Copy failed'));
-  const save = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([`Meridian backup codes\n\n${text}\n`], { type: 'text/plain' })); a.download = 'meridian-backup-codes.txt'; a.click(); };
+  const save = () => { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([`Crypto Decoder backup codes\n\n${text}\n`], { type: 'text/plain' })); a.download = 'crypto-decoder-backup-codes.txt'; a.click(); };
   return (
     <div className="space-y-4">
       <FormNote>Save these backup codes now. Each works once if you lose your phone. They are not shown again.</FormNote>

@@ -1,37 +1,114 @@
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { createChart, CandlestickSeries, LineSeries, AreaSeries, HistogramSeries, CrosshairMode, ColorType, LineStyle } from 'lightweight-charts';
-import { CandlestickChart, LineChart, AreaChart, SlidersHorizontal } from 'lucide-react';
+import { createChart, LineSeries, HistogramSeries, CrosshairMode, ColorType, LineStyle } from 'lightweight-charts';
+import { SlidersHorizontal, ChevronDown, Settings2, Check } from 'lucide-react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import clsx from 'clsx';
 import { api, qs } from '../lib/api.js';
 import { useMarket } from '../store/market.js';
 import { fmtPrice, fmtPct } from '../lib/format.js';
-import { Segmented, Spinner, SimTag, ErrorState } from './ui.jsx';
+import { Segmented, Spinner, SimTag, ErrorState, Modal } from './ui.jsx';
 import SymbolPicker from './SymbolPicker.jsx';
 import { sma, ema, bollinger, rsi } from './indicators.js';
+import { CHART_TYPES, OHLC_TYPES, STYLE_DEFAULT, PRECISIONS, loadChartPrefs, saveChartPrefs, seriesData, seriesSpec } from './chartTypes.js';
+import ChartTypeIcon from './chartIcons.jsx';
 import { C } from '../lib/theme.js';
 
 const FRAMES = [['1m', '1m'], ['5m', '5m'], ['15m', '15m'], ['1h', '1H'], ['4h', '4H'], ['1d', '1D'], ['1w', '1W']];
 const STEP = { '1m': 60, '5m': 300, '15m': 900, '1h': 3600, '4h': 14400, '1d': 86400, '1w': 604800 };
-const UP = C.candleUp; const DOWN = C.candleDown;
-const IND_DEFAULT = { ma: true, ema: false, bb: false, vol: true, rsi: false };
+const fmtVol = (v) => (v >= 1e9 ? `${(v / 1e9).toFixed(2)}B` : v >= 1e6 ? `${(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `${(v / 1e3).toFixed(2)}K` : v.toFixed(2));
+const INDICATORS = [['ma', 'Moving Average (20)', C.ma], ['ema', 'EMA (50)', C.ema], ['bb', 'Bollinger Bands (20, 2)', C.mute], ['vol', 'Volume', C.dim], ['rsi', 'RSI (14)', C.rsi]];
+
+/** Small dropdown popover; closes on outside click / Escape. Motion is skipped under prefers-reduced-motion. */
+function Popover({ open, onClose, children, className = '' }) {
+  const reduce = useReducedMotion();
+  useEffect(() => {
+    if (!open) return undefined;
+    const k = (e) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', k); return () => document.removeEventListener('keydown', k);
+  }, [open, onClose]);
+  return (
+    <AnimatePresence>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-30" onClick={onClose} aria-hidden />
+          <motion.div className={clsx('absolute z-40 mt-2 glass glass-strong glass-pop p-1.5', className)}
+            initial={reduce ? false : { opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={reduce ? { opacity: 0, transition: { duration: 0 } } : { opacity: 0, y: -4 }} transition={{ duration: 0.12 }}>
+            {children}
+          </motion.div>
+        </>
+      )}
+    </AnimatePresence>
+  );
+}
+
+function ColorPair({ label, enabled, onToggle, up, down, onUp, onDown, disabled }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-2">
+      <label className={clsx('flex items-center gap-2.5 text-sm', disabled && 'opacity-50')}>
+        <input type="checkbox" className="accent-[#1a5ad7] size-3.5" checked={enabled} disabled={disabled} onChange={onToggle} />{label}
+      </label>
+      <div className="flex items-center gap-2">
+        <input type="color" aria-label={`${label} up colour`} value={up} onChange={(e) => onUp(e.target.value)} className="size-7 rounded-md border border-line bg-transparent cursor-pointer p-0.5" />
+        <input type="color" aria-label={`${label} down colour`} value={down} onChange={(e) => onDown(e.target.value)} className="size-7 rounded-md border border-line bg-transparent cursor-pointer p-0.5" />
+      </div>
+    </div>
+  );
+}
+
+function ChartSettings({ open, onClose, style, setStyle, type }) {
+  const set = (p) => setStyle((s) => ({ ...s, ...p }));
+  const candleLike = type !== 'bars';
+  return (
+    <Modal open={open} onClose={onClose} title="Chart settings" width="max-w-md"
+      footer={<><button className="btn btn-ghost btn-sm" onClick={() => setStyle(STYLE_DEFAULT)}>Reset to defaults</button><button className="btn btn-primary btn-sm" onClick={onClose}>Done</button></>}>
+      <p className="label mb-1">Candles</p>
+      <div className="divide-y divide-line">
+        <ColorPair label="Body" enabled={style.body} onToggle={() => set({ body: !style.body })} up={style.bodyUp} down={style.bodyDown} onUp={(v) => set({ bodyUp: v })} onDown={(v) => set({ bodyDown: v })} />
+        <ColorPair label="Borders" enabled={style.borders} disabled={!candleLike} onToggle={() => set({ borders: !style.borders })} up={style.borderUp} down={style.borderDown} onUp={(v) => set({ borderUp: v })} onDown={(v) => set({ borderDown: v })} />
+        <ColorPair label="Wick" enabled={style.wick} disabled={!candleLike} onToggle={() => set({ wick: !style.wick })} up={style.wickUp} down={style.wickDown} onUp={(v) => set({ wickUp: v })} onDown={(v) => set({ wickDown: v })} />
+      </div>
+      <label className="flex items-center gap-2.5 text-sm mt-3">
+        <input type="checkbox" className="accent-[#1a5ad7] size-3.5" checked={style.prevClose} onChange={() => set({ prevClose: !style.prevClose })} />
+        Colour bars based on previous close
+      </label>
+      <p className="label mt-5 mb-1.5">Price scale</p>
+      <label className="flex items-center justify-between gap-3 text-sm">
+        Precision
+        <select className="input !h-9 !w-36" value={style.precision} onChange={(e) => set({ precision: e.target.value })}>
+          {PRECISIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+        </select>
+      </label>
+      <p className="text-xs text-dim mt-4">Saved in this browser. Up / down colours apply to candles, bars, columns and baseline.</p>
+    </Modal>
+  );
+}
 
 /**
- * Live candlestick chart (TradingView lightweight-charts).
+ * Live price chart (TradingView lightweight-charts) with a chart-type menu, chart settings and indicators.
  * `levels`: [{ price, color, title }] drawn as horizontal price lines (signal entry/SL/TP, open positions).
  */
 export default memo(function PriceChart({ symbol, onSymbolChange, interval: intervalProp, onIntervalChange, levels = [], className = '', compact = false }) {
   const [intervalState, setIntervalState] = useState('1h');
   const interval = intervalProp || intervalState;
   const setInterval_ = onIntervalChange || setIntervalState;
-  const [type, setType] = useState('candles');
-  const [ind, setInd] = useState(() => { try { return { ...IND_DEFAULT, ...JSON.parse(localStorage.getItem('meridian_ind') || '{}') }; } catch { return IND_DEFAULT; } });
-  const [menu, setMenu] = useState(false);
+  const [prefs] = useState(loadChartPrefs);
+  const [type, setType] = useState(prefs.type);
+  const [style, setStyle] = useState(prefs.style);
+  const [ind, setInd] = useState(prefs.ind);
+  const [menu, setMenu] = useState(null); // 'type' | 'ind' | null
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [state, setState] = useState({ loading: true, error: null, source: null });
   const [legend, setLegend] = useState(null);
+  const [mainVer, setMainVer] = useState(0);
 
   const host = useRef(null); const chartRef = useRef(null); const s = useRef({}); const data = useRef([]);
   const lines = useRef([]); const indRef = useRef(ind); indRef.current = ind;
+  const view = useRef({ type, style }); view.current = { type, style };
   const decimals = useMarket((m) => m.quotes[symbol]?.decimals ?? 2);
+  const precision = style.precision === 'default' ? decimals : Number(style.precision);
+  const precRef = useRef(precision); precRef.current = precision;
+
+  useEffect(() => { saveChartPrefs({ type, style, ind }); }, [type, style, ind]);
 
   // ---- create chart once
   useEffect(() => {
@@ -45,9 +122,6 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
       handleScale: { axisPressedMouseMove: true }, kineticScroll: { touch: true, mouse: false },
     });
     chartRef.current = chart;
-    s.current.candles = chart.addSeries(CandlestickSeries, { upColor: UP, downColor: DOWN, borderVisible: false, wickUpColor: UP, wickDownColor: DOWN, priceLineVisible: true, priceLineStyle: LineStyle.Dotted });
-    s.current.line = chart.addSeries(LineSeries, { color: C.accent, lineWidth: 2, visible: false, priceLineVisible: true });
-    s.current.area = chart.addSeries(AreaSeries, { lineColor: C.accent, topColor: C.accentSoft, bottomColor: C.accentFade, lineWidth: 2, visible: false });
     s.current.vol = chart.addSeries(HistogramSeries, { priceFormat: { type: 'volume' }, priceScaleId: 'vol', lastValueVisible: false, priceLineVisible: false });
     chart.priceScale('vol').applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
     s.current.ma = chart.addSeries(LineSeries, { color: C.ma, lineWidth: 1, lastValueVisible: false, priceLineVisible: false, crosshairMarkerVisible: false });
@@ -55,13 +129,42 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
     s.current.bbu = chart.addSeries(LineSeries, { color: C.bb, lineWidth: 1, lineStyle: LineStyle.Dashed, lastValueVisible: false, priceLineVisible: false, crosshairMarkerVisible: false });
     s.current.bbl = chart.addSeries(LineSeries, { color: C.bb, lineWidth: 1, lineStyle: LineStyle.Dashed, lastValueVisible: false, priceLineVisible: false, crosshairMarkerVisible: false });
 
+    // Legend always shows the real OHLC of the hovered bar (also for Heikin Ashi / line types).
     chart.subscribeCrosshairMove((p) => {
-      const d = p.seriesData?.get(s.current.candles) || p.seriesData?.get(s.current.line) || p.seriesData?.get(s.current.area);
-      if (!p.time || !d) return setLegend(null);
-      setLegend({ o: d.open ?? d.value, h: d.high ?? d.value, l: d.low ?? d.value, c: d.close ?? d.value });
+      const c = p.time != null && p.logical != null ? data.current[Math.round(p.logical)] : null;
+      if (!c || c.time !== p.time) return setLegend(null);
+      setLegend({ o: c.open, h: c.high, l: c.low, c: c.close, v: c.volume });
     });
     return () => { chart.remove(); chartRef.current = null; s.current = {}; lines.current = []; };
   }, []);
+
+  const volData = (d, st) => d.map((c, i) => {
+    const up = st.prevClose && i > 0 ? c.close >= d[i - 1].close : c.close >= c.open;
+    return { time: c.time, value: c.volume, color: (up ? st.bodyUp : st.bodyDown) + '4d' };
+  });
+
+  // ---- main price series: rebuilt when the chart type changes, restyled when settings change
+  const paintMain = useCallback(() => {
+    const S = s.current; const d = data.current; const { type: t, style: st } = view.current;
+    if (!S.main) return;
+    const [, opts] = seriesSpec(t, st, d);
+    S.main.applyOptions({ ...opts, priceFormat: { type: 'price', precision: precRef.current, minMove: 1 / 10 ** precRef.current } });
+    S.main.setData(seriesData(d, t, st));
+    S.vol.setData(volData(d, st));
+  }, []);
+
+  useEffect(() => {
+    const chart = chartRef.current; if (!chart) return;
+    const S = s.current;
+    if (S.main) { lines.current = []; chart.removeSeries(S.main); }
+    const [def, opts] = seriesSpec(type, view.current.style, data.current);
+    S.main = chart.addSeries(def, opts);
+    S.main.setSeriesOrder(1); // above volume, below indicator lines
+    paintMain();
+    setMainVer((v) => v + 1);
+  }, [type, paintMain]);
+
+  useEffect(() => { paintMain(); }, [style, precision, paintMain]);
 
   const applyIndicators = useCallback((full = true) => {
     const d = data.current; const i = indRef.current; const S = s.current;
@@ -86,7 +189,7 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
     } else if (!ind.rsi && s.current.rsi) { chart.removeSeries(s.current.rsi); s.current.rsi = null; }
   }, [ind.rsi, state.loading]);
 
-  useEffect(() => { localStorage.setItem('meridian_ind', JSON.stringify(ind)); applyIndicators(true); }, [ind, applyIndicators]);
+  useEffect(() => { applyIndicators(true); }, [ind, applyIndicators]);
 
   // ---- load candles when symbol / interval changes
   const load = useCallback(async (signal) => {
@@ -94,43 +197,35 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
     try {
       const r = await api(`/market/klines${qs({ symbol, interval, limit: 400 })}`, { signal });
       if (signal?.aborted || !chartRef.current) return;
-      data.current = r.candles; const S = s.current;
-      S.candles.setData(r.candles);
-      S.line.setData(r.candles.map((c) => ({ time: c.time, value: c.close })));
-      S.area.setData(r.candles.map((c) => ({ time: c.time, value: c.close })));
-      S.vol.setData(r.candles.map((c) => ({ time: c.time, value: c.volume, color: c.close >= c.open ? C.upVol : C.downVol })));
+      data.current = r.candles;
+      paintMain();
       applyIndicators(true);
       chartRef.current.timeScale().fitContent(); chartRef.current.timeScale().scrollToPosition(6, false);
       setState({ loading: false, error: null, source: r.source, stale: !!r.stale });
     } catch (e) { if (e.name !== 'AbortError') setState({ loading: false, error: e.message, source: null }); }
-  }, [symbol, interval, applyIndicators]);
+  }, [symbol, interval, applyIndicators, paintMain]);
 
   useEffect(() => { const ac = new AbortController(); load(ac.signal); return () => ac.abort(); }, [load]);
-
-  useEffect(() => {
-    const p = { type: 'price', precision: decimals, minMove: 1 / 10 ** decimals };
-    const S = s.current; ['candles', 'line', 'area'].forEach((k) => S[k]?.applyOptions({ priceFormat: p }));
-  }, [decimals, symbol]);
-
-  useEffect(() => {
-    const S = s.current;
-    S.candles?.applyOptions({ visible: type === 'candles' }); S.line?.applyOptions({ visible: type === 'line' }); S.area?.applyOptions({ visible: type === 'area' });
-  }, [type]);
 
   // ---- live ticks update the last candle
   useEffect(() => {
     let lastPrice = null;
     const unsub = useMarket.subscribe((m) => {
       const q = m.quotes[symbol]; const d = data.current; const S = s.current;
-      if (!q || !d.length || !S.candles || q.price === lastPrice) return;
+      if (!q || !d.length || !S.main || q.price === lastPrice) return;
       lastPrice = q.price;
-      const step = STEP[interval]; const bucket = Math.floor((q.ts || Date.now()) / 1000 / step) * step; // market time: closed markets do not grow empty candles const last = d[d.length - 1];
+      const step = STEP[interval]; const bucket = Math.floor((q.ts || Date.now()) / 1000 / step) * step; // market time: closed markets do not grow empty candles
+      const last = d[d.length - 1];
       let c;
       if (bucket < last.time) return;
       if (bucket > last.time) { c = { time: bucket, open: last.close, high: Math.max(last.close, q.price), low: Math.min(last.close, q.price), close: q.price, volume: 0 }; d.push(c); }
       else { c = { ...last, close: q.price, high: Math.max(last.high, q.price), low: Math.min(last.low, q.price) }; d[d.length - 1] = c; }
-      S.candles.update(c); S.line.update({ time: c.time, value: c.close }); S.area.update({ time: c.time, value: c.close });
-      S.vol.update({ time: c.time, value: c.volume, color: c.close >= c.open ? C.upVol : C.downVol });
+      const { type: t, style: st } = view.current;
+      // Heikin Ashi / previous-close colouring depend on earlier bars, so derive the point from the last two bars only.
+      const tail = d.slice(-2); const from = t === 'heikin' ? d : tail;
+      const pts = seriesData(from, t, st);
+      S.main.update(pts[pts.length - 1]);
+      const vp = volData(tail, st); S.vol.update(vp[vp.length - 1]);
       applyIndicators(false);
     });
     return unsub;
@@ -139,53 +234,69 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
   // ---- horizontal levels (signal entry / SL / TP, open positions)
   const levelsKey = JSON.stringify(levels);
   useEffect(() => {
-    const series = s.current.candles; if (!series) return;
+    const series = s.current.main; if (!series) return;
     lines.current.forEach((l) => { try { series.removePriceLine(l); } catch { /* chart rebuilt */ } });
     lines.current = levels.map((l) => series.createPriceLine({ price: l.price, color: l.color, lineWidth: 1, lineStyle: l.solid ? LineStyle.Solid : LineStyle.Dashed, axisLabelVisible: true, title: l.title }));
-  }, [levelsKey, state.loading]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [levelsKey, state.loading, mainVer]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const last = data.current[data.current.length - 1]; const first = data.current[0];
-  const shown = legend || (last && { o: last.open, h: last.high, l: last.low, c: last.close });
+  const shown = legend || (last && { o: last.open, h: last.high, l: last.low, c: last.close, v: last.volume });
   const chg = shown && first ? ((shown.c - shown.o) / shown.o) * 100 : null;
   const tgl = (k) => setInd((p) => ({ ...p, [k]: !p[k] }));
+  const closeMenu = useCallback(() => setMenu(null), []);
+  const typeLabel = CHART_TYPES.find((t) => t.value === type)?.label || 'Candles';
+  const fmt = (v) => fmtPrice(v, precision);
 
   return (
     <div className={clsx('flex flex-col min-w-0', className)}>
       <div className="flex flex-wrap items-center gap-2 px-3 py-2.5 border-b border-line">
         <SymbolPicker value={symbol} onChange={onSymbolChange || (() => {})} />
         <Segmented ariaLabel="Timeframe" size="sm" value={interval} onChange={setInterval_} options={FRAMES.map(([v, l]) => ({ value: v, label: l }))} />
-        <div className="ml-auto flex items-center gap-2">
-          {!compact && (
-            <Segmented ariaLabel="Chart type" size="sm" value={type} onChange={setType}
-              options={[{ value: 'candles', label: <CandlestickChart size={14} aria-label="Candles" /> }, { value: 'line', label: <LineChart size={14} aria-label="Line" /> }, { value: 'area', label: <AreaChart size={14} aria-label="Area" /> }]} />
-          )}
+        <div className="ml-auto flex items-center gap-1.5">
           <div className="relative">
-            <button className="btn btn-ghost btn-sm" onClick={() => setMenu((m) => !m)} aria-expanded={menu}><SlidersHorizontal size={14} /> <span className="hidden sm:inline">Indicators</span></button>
-            {menu && (
-              <>
-                <div className="fixed inset-0 z-30" onClick={() => setMenu(false)} aria-hidden />
-                <div className="absolute right-0 z-40 mt-2 w-52 glass glass-strong glass-pop p-2">
-                  {[['ma', 'MA (20)', C.ma], ['ema', 'EMA (50)', C.ema], ['bb', 'Bollinger (20, 2)', C.mute], ['vol', 'Volume', C.dim], ['rsi', 'RSI (14)', C.rsi]].map(([k, label, col]) => (
-                    <label key={k} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-ink/[0.05] cursor-pointer text-sm">
-                      <input type="checkbox" className="accent-[#1a5ad7] size-3.5" checked={!!ind[k]} onChange={() => tgl(k)} />
-                      <span className="size-2 rounded-full" style={{ background: col }} />{label}
-                    </label>
-                  ))}
-                </div>
-              </>
-            )}
+            <button className="btn btn-ghost btn-sm gap-1" onClick={() => setMenu((m) => (m === 'type' ? null : 'type'))} aria-haspopup="menu" aria-expanded={menu === 'type'} aria-label={`Chart type: ${typeLabel}`} title="Chart type">
+              <ChartTypeIcon type={type} /><ChevronDown size={13} className="text-dim" />
+            </button>
+            <Popover open={menu === 'type'} onClose={closeMenu} className="right-0 w-56">
+              <p className="px-2.5 pt-1.5 pb-1 text-[0.7rem] uppercase tracking-wider text-dim">Chart type</p>
+              <div role="menu" aria-label="Chart type">
+                {CHART_TYPES.map((t) => (
+                  <button key={t.value} role="menuitemradio" aria-checked={type === t.value} onClick={() => { setType(t.value); closeMenu(); }}
+                    className={clsx('w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-sm text-left hover:bg-ink/[0.05]', type === t.value && 'bg-accent/10 text-accent')}>
+                    <ChartTypeIcon type={t.value} /><span className="flex-1">{t.label}</span>{type === t.value && <Check size={14} />}
+                  </button>
+                ))}
+              </div>
+            </Popover>
           </div>
+          <div className="relative">
+            <button className="btn btn-ghost btn-sm" onClick={() => setMenu((m) => (m === 'ind' ? null : 'ind'))} aria-haspopup="menu" aria-expanded={menu === 'ind'} title="Indicators"><SlidersHorizontal size={14} /> <span className="hidden sm:inline">Indicators</span></button>
+            <Popover open={menu === 'ind'} onClose={closeMenu} className="right-0 w-60">
+              <p className="px-2.5 pt-1.5 pb-1 text-[0.7rem] uppercase tracking-wider text-dim">Indicators</p>
+              {INDICATORS.map(([k, label, col]) => (
+                <label key={k} className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-ink/[0.05] cursor-pointer text-sm">
+                  <input type="checkbox" className="accent-[#1a5ad7] size-3.5" checked={!!ind[k]} onChange={() => tgl(k)} />
+                  <span className="size-2 rounded-full" style={{ background: col }} />{label}
+                </label>
+              ))}
+            </Popover>
+          </div>
+          {!compact && (
+            <button className="btn btn-ghost btn-sm btn-icon" onClick={() => setSettingsOpen(true)} aria-label="Chart settings" title="Chart settings"><Settings2 size={15} /></button>
+          )}
         </div>
       </div>
       <div className="relative flex-1 min-h-[280px]">
         <div ref={host} className="absolute inset-0" role="img" aria-label={`${symbol} ${interval} price chart`} />
         {shown && (
           <div className="absolute left-3 top-2 z-10 max-w-[55%] flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[0.8125rem] num pointer-events-none">
-            <span className="text-mute hidden sm:inline">O <b className="text-ink font-medium">{fmtPrice(shown.o, decimals)}</b></span>
-            <span className="text-mute hidden sm:inline">H <b className="text-ink font-medium">{fmtPrice(shown.h, decimals)}</b></span>
-            <span className="text-mute hidden sm:inline">L <b className="text-ink font-medium">{fmtPrice(shown.l, decimals)}</b></span>
-            <span className="text-mute">C <b className={clsx('font-medium', chg >= 0 ? 'up' : 'down')}>{fmtPrice(shown.c, decimals)}</b></span>
+            <span className="text-mute hidden sm:inline">O <b className="text-ink font-medium">{fmt(shown.o)}</b></span>
+            <span className="text-mute hidden sm:inline">H <b className="text-ink font-medium">{fmt(shown.h)}</b></span>
+            <span className="text-mute hidden sm:inline">L <b className="text-ink font-medium">{fmt(shown.l)}</b></span>
+            <span className="text-mute">C <b className={clsx('font-medium', chg >= 0 ? 'up' : 'down')}>{fmt(shown.c)}</b></span>
             {chg != null && <span className={chg >= 0 ? 'up' : 'down'}>{fmtPct(chg)}</span>}
+            {ind.vol && shown.v != null && <span className="text-mute hidden md:inline">Vol <b className="text-ink font-medium">{fmtVol(shown.v)}</b></span>}
+            {!OHLC_TYPES.has(type) && <span className="text-dim hidden md:inline">{typeLabel}</span>}
           </div>
         )}
         <div className="absolute right-3 top-2 z-10 flex items-center gap-1.5 pointer-events-none">
@@ -198,6 +309,7 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
         {state.loading && <div className="absolute inset-0 z-20 grid place-items-center bg-bg/50"><Spinner className="text-accent-2" /></div>}
         {state.error && <div className="absolute inset-0 z-20 grid place-items-center bg-bg/80"><ErrorState message={state.error} onRetry={() => load()} /></div>}
       </div>
+      {!compact && <ChartSettings open={settingsOpen} onClose={() => setSettingsOpen(false)} style={style} setStyle={setStyle} type={type} />}
     </div>
   );
 });
