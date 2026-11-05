@@ -73,6 +73,14 @@ Most signal groups run on chat screenshots and spreadsheets. Crypto Decoder puts
 |---|---|
 | ![Signals](screenshots/desktop-06-signals.png) | ![Admin overview](screenshots/desktop-10-admin-overview.png) |
 
+| Chart type menu | Chart settings |
+|---|---|
+| ![Chart types](screenshots/charts/menu.png) | ![Chart settings](screenshots/charts/settings.png) |
+
+| Heikin Ashi | Hollow candles |
+|---|---|
+| ![Heikin Ashi](screenshots/charts/c_Heikin_Ashi.png) | ![Hollow candles](screenshots/charts/c_Hollow_candles.png) |
+
 ## Tech stack
 
 | Layer | Tools |
