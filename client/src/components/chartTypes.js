@@ -23,9 +23,39 @@ export const STYLE_DEFAULT = {
   wick: true, wickUp: C.candleUp, wickDown: C.candleDown,
   prevClose: false,
   precision: 'default', // 'default' = instrument decimals, else '2'..'5'
+  timezone: 'UTC', // 'UTC' | 'local' | IANA zone, see TIMEZONES
 };
 export const IND_DEFAULT = { ma: true, ema: false, bb: false, vol: true, rsi: false };
 export const PRECISIONS = [['default', 'Default'], ['2', '0.01'], ['3', '0.001'], ['4', '0.0001'], ['5', '0.00001']];
+
+export const TIMEZONES = [
+  ['UTC', 'UTC'], ['local', 'Browser local time'], ['Asia/Karachi', '(UTC+5) Karachi'], ['Asia/Dubai', '(UTC+4) Dubai'],
+  ['Europe/London', 'London'], ['America/New_York', 'New York'], ['Asia/Singapore', '(UTC+8) Singapore'], ['Asia/Tokyo', '(UTC+9) Tokyo'],
+];
+
+// ---- time zone: chart times are UTC unix seconds; these formatters render the axis + crosshair label in the chosen zone
+const tzCache = new Map();
+function tzFormats(tz) {
+  if (tzCache.has(tz)) return tzCache.get(tz);
+  const timeZone = tz === 'local' ? undefined : tz;
+  const mk = (o) => new Intl.DateTimeFormat('en-GB', { timeZone, ...o });
+  const f = {
+    full: mk({ weekday: 'short', day: '2-digit', month: 'short', year: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }),
+    year: mk({ year: 'numeric' }), month: mk({ month: 'short' }), day: mk({ day: 'numeric' }),
+    time: mk({ hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }), sec: mk({ hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }),
+  };
+  tzCache.set(tz, f); return f;
+}
+const toDate = (t) => (typeof t === 'number' ? new Date(t * 1000) : typeof t === 'string' ? new Date(`${t}T00:00:00Z`) : new Date(Date.UTC(t.year, t.month - 1, t.day)));
+/** lightweight-charts options that show times in `tz` (TickMarkType: 0 Year, 1 Month, 2 DayOfMonth, 3 Time, 4 TimeWithSeconds). */
+export function timeOptions(tz) {
+  const f = tzFormats(tz);
+  return {
+    localization: { timeFormatter: (t) => f.full.format(toDate(t)) },
+    timeScale: { tickMarkFormatter: (t, k) => { const d = toDate(t); return k === 0 ? f.year.format(d) : k === 1 ? f.month.format(d) : k === 2 ? f.day.format(d) : k === 4 ? f.sec.format(d) : f.time.format(d); } },
+  };
+}
+export const tzLabel = (tz) => (tz === 'local' ? 'Local' : tz === 'UTC' ? 'UTC' : tz.split('/').pop().replace('_', ' '));
 
 const KEY = 'crypto_decoder_chart';
 const LEGACY_IND = 'meridian_ind';
@@ -37,9 +67,15 @@ export function loadChartPrefs() {
   if (!ind) { try { ind = JSON.parse(localStorage.getItem(LEGACY_IND) || 'null'); } catch { ind = null; } }
   return {
     type: TYPE_SET.has(saved.type) ? saved.type : 'candles',
-    style: { ...STYLE_DEFAULT, ...(saved.style || {}) },
+    style: sanitizeStyle(saved.style),
     ind: { ...IND_DEFAULT, ...(ind || {}) },
   };
+}
+function sanitizeStyle(raw) {
+  const st = { ...STYLE_DEFAULT, ...(raw && typeof raw === 'object' ? raw : {}) };
+  if (!TIMEZONES.some(([v]) => v === st.timezone)) st.timezone = STYLE_DEFAULT.timezone;
+  if (!PRECISIONS.some(([v]) => v === st.precision)) st.precision = STYLE_DEFAULT.precision;
+  return st;
 }
 export function saveChartPrefs(prefs) {
   try { localStorage.setItem(KEY, JSON.stringify(prefs)); localStorage.removeItem(LEGACY_IND); } catch { /* private mode */ }

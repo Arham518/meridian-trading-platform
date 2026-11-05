@@ -1,3 +1,4 @@
+import { createPortal } from 'react-dom';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { createChart, LineSeries, HistogramSeries, CrosshairMode, ColorType, LineStyle } from 'lightweight-charts';
 import { SlidersHorizontal, ChevronDown, Settings2, Check } from 'lucide-react';
@@ -9,7 +10,7 @@ import { fmtPrice, fmtPct } from '../lib/format.js';
 import { Segmented, Spinner, SimTag, ErrorState, Modal } from './ui.jsx';
 import SymbolPicker from './SymbolPicker.jsx';
 import { sma, ema, bollinger, rsi } from './indicators.js';
-import { CHART_TYPES, OHLC_TYPES, STYLE_DEFAULT, PRECISIONS, loadChartPrefs, saveChartPrefs, seriesData, seriesSpec } from './chartTypes.js';
+import { CHART_TYPES, OHLC_TYPES, STYLE_DEFAULT, PRECISIONS, TIMEZONES, timeOptions, tzLabel, loadChartPrefs, saveChartPrefs, seriesData, seriesSpec } from './chartTypes.js';
 import ChartTypeIcon from './chartIcons.jsx';
 import { C } from '../lib/theme.js';
 
@@ -58,7 +59,8 @@ function ColorPair({ label, enabled, onToggle, up, down, onUp, onDown, disabled 
 function ChartSettings({ open, onClose, style, setStyle, type }) {
   const set = (p) => setStyle((s) => ({ ...s, ...p }));
   const candleLike = type !== 'bars';
-  return (
+  // portal: the chart card uses backdrop-filter, which would otherwise trap this position:fixed dialog inside the card
+  return createPortal(
     <Modal open={open} onClose={onClose} title="Chart settings" width="max-w-md"
       footer={<><button className="btn btn-ghost btn-sm" onClick={() => setStyle(STYLE_DEFAULT)}>Reset to defaults</button><button className="btn btn-primary btn-sm" onClick={onClose}>Done</button></>}>
       <p className="label mb-1">Candles</p>
@@ -78,8 +80,15 @@ function ChartSettings({ open, onClose, style, setStyle, type }) {
           {PRECISIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>
       </label>
+      <label className="flex items-center justify-between gap-3 text-sm mt-3">
+        Timezone
+        <select className="input !h-9 !w-44" value={style.timezone} onChange={(e) => set({ timezone: e.target.value })}>
+          {TIMEZONES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+        </select>
+      </label>
       <p className="text-xs text-dim mt-4">Saved in this browser. Up / down colours apply to candles, bars, columns and baseline.</p>
-    </Modal>
+    </Modal>,
+    document.body,
   );
 }
 
@@ -165,6 +174,8 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
   }, [type, paintMain]);
 
   useEffect(() => { paintMain(); }, [style, precision, paintMain]);
+  // time axis + crosshair label in the chosen time zone
+  useEffect(() => { chartRef.current?.applyOptions(timeOptions(style.timezone)); }, [style.timezone]);
 
   const applyIndicators = useCallback((full = true) => {
     const d = data.current; const i = indRef.current; const S = s.current;
@@ -295,6 +306,7 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
             <span className="text-mute hidden sm:inline">L <b className="text-ink font-medium">{fmt(shown.l)}</b></span>
             <span className="text-mute">C <b className={clsx('font-medium', chg >= 0 ? 'up' : 'down')}>{fmt(shown.c)}</b></span>
             {chg != null && <span className={chg >= 0 ? 'up' : 'down'}>{fmtPct(chg)}</span>}
+            {!compact && style.timezone !== 'UTC' && <span className="text-dim text-[0.72rem]">{tzLabel(style.timezone)}</span>}
             {ind.vol && shown.v != null && <span className="text-mute hidden md:inline">Vol <b className="text-ink font-medium">{fmtVol(shown.v)}</b></span>}
             {!OHLC_TYPES.has(type) && <span className="text-dim hidden md:inline">{typeLabel}</span>}
           </div>
