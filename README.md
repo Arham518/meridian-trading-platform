@@ -11,11 +11,28 @@ React 19 · Vite · Node · Express · SQLite · WebSockets · Excel export
 
 ![Meridian landing page](screenshots/desktop-01-landing-hero.png)
 
+> **Status:** full-stack demo you can run locally. Trading is **paper only (virtual money)** — nothing places real broker orders.
+> Crypto candles/prices use the public Binance API; forex, gold, indices and stocks are **simulated** and labelled **SIM** in the UI.
+> Seeded login emails below are **demo placeholders**, not production accounts.
+
 ---
 
 ## Why Meridian
 
 Most signal groups run on chat screenshots and spreadsheets. Meridian puts the whole workflow in one place: an admin posts a signal with entry, stop loss and targets, every member sees it instantly on a live chart, and every signal, trade and login is stored and exportable. Trading is **paper only (virtual money)**. Nothing here places real orders.
+
+## What works now vs. simulated vs. planned
+
+| Area | Status |
+| --- | --- |
+| Auth (register, verify, login, reset, sessions, optional TOTP 2FA) | ✅ Works |
+| Live signal feed over WebSockets | ✅ Works |
+| Paper trading (market/limit, SL/TP, P&amp;L, history) | ✅ Virtual balances only |
+| Crypto prices &amp; candles (Binance public API) | ✅ Live market data |
+| Forex / gold / indices / stocks | 🧪 Simulated (**SIM** label) |
+| Admin signals, users, ads/media, Excel export | ✅ Works |
+| Email delivery | ✅ Real SMTP when configured; otherwise console + `server/data/outbox/` |
+| Real broker / exchange order routing | 🗓 Out of scope |
 
 ## Features
 
@@ -80,9 +97,9 @@ npm run dev
 
 For a production build, run `npm run build` then `npm start`. Express then serves the built site and the API together on http://localhost:4000.
 
-### Demo accounts
+### Demo accounts (placeholders)
 
-The first run seeds labelled demo data (set `SEED_DEMO=false` for an empty site).
+The first run seeds **labelled demo data** (set `SEED_DEMO=false` for an empty site).
 
 | Role | Email | Password |
 |---|---|---|
@@ -177,6 +194,15 @@ the API and socket.io on `$PORT`. Step-by-step instructions for Hostless are in 
 ## Disclaimer
 
 Meridian is an educational project. Signals are not financial advice, trading involves risk, and all trading in the app is simulated with virtual money. Prices for non-crypto markets are simulated and marked **SIM**.
+
+## Security
+
+Never commit real `.env` values, SMTP passwords, `JWT_SECRET`, or database URLs. Start from `.env.example`.
+Demo emails/passwords above are for local evaluation only — change `ADMIN_PASSWORD` and disable `SEED_DEMO` before any shared deploy. Keep `REQUIRE_ADMIN_2FA=true` in production.
+
+## Author
+
+Muhammad Arham · [GitHub Arham518](https://github.com/Arham518)
 
 ## License
 
