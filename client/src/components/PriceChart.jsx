@@ -13,6 +13,9 @@ import { sma, ema, bollinger, rsi } from './indicators.js';
 import { CHART_TYPES, OHLC_TYPES, STYLE_DEFAULT, PRECISIONS, TIMEZONES, timeOptions, tzLabel, loadChartPrefs, saveChartPrefs, seriesData, seriesSpec } from './chartTypes.js';
 import ChartTypeIcon from './chartIcons.jsx';
 import { C } from '../lib/theme.js';
+import { getSocket } from '../lib/socket.js';
+import { useAuth } from '../store/auth.js';
+import ChartDrawings from './chartDrawings/ChartDrawings.jsx';
 
 const FRAMES = [['1m', '1m'], ['5m', '5m'], ['15m', '15m'], ['1h', '1H'], ['4h', '4H'], ['1d', '1D'], ['1w', '1W']];
 const STEP = { '1m': 60, '5m': 300, '15m': 900, '1h': 3600, '4h': 14400, '1d': 86400, '1w': 604800 };
@@ -109,6 +112,13 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
   const [state, setState] = useState({ loading: true, error: null, source: null });
   const [legend, setLegend] = useState(null);
   const [mainVer, setMainVer] = useState(0);
+  // Binance market for crypto charts: spot or USD-M perpetual futures (live via the server's kline stream hub)
+  const [market, setMarket] = useState(() => { try { return localStorage.getItem('cd_chart_market') === 'futures' ? 'futures' : 'spot'; } catch { return 'spot'; } });
+  useEffect(() => { try { localStorage.setItem('cd_chart_market', market); } catch { /* */ } }, [market]);
+  const authed = useAuth((a) => !!a.user);
+  const [live, setLive] = useState(false); // true while Binance WS candles are arriving
+  const lastWs = useRef(0);
+  const wrapRef = useRef(null); const canvasRef = useRef(null);
 
   const host = useRef(null); const chartRef = useRef(null); const s = useRef({}); const data = useRef([]);
   const lines = useRef([]); const indRef = useRef(ind); indRef.current = ind;
@@ -206,7 +216,7 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
   const load = useCallback(async (signal) => {
     setState((p) => ({ ...p, loading: true, error: null }));
     try {
-      const r = await api(`/market/klines${qs({ symbol, interval, limit: 400 })}`, { signal });
+      const r = await api(`/market/klines${qs({ symbol, interval, limit: 400, market })}`, { signal });
       if (signal?.aborted || !chartRef.current) return;
       data.current = r.candles;
       paintMain();
@@ -214,33 +224,75 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
       chartRef.current.timeScale().fitContent(); chartRef.current.timeScale().scrollToPosition(6, false);
       setState({ loading: false, error: null, source: r.source, stale: !!r.stale });
     } catch (e) { if (e.name !== 'AbortError') setState({ loading: false, error: e.message, source: null }); }
-  }, [symbol, interval, applyIndicators, paintMain]);
+  }, [symbol, interval, market, applyIndicators, paintMain]);
 
   useEffect(() => { const ac = new AbortController(); load(ac.signal); return () => ac.abort(); }, [load]);
 
-  // ---- live ticks update the last candle
+  // ---- apply one candle (live WS kline or REST fallback): updates only the forming bar, appends on a new bar.
+  // Chart updates go straight to the series through refs, so ticks never re-render the React tree.
+  const applyCandle = useCallback((c) => {
+    const d = data.current; const S = s.current; if (!d.length || !S.main) return;
+    const last = d[d.length - 1];
+    if (c.time < last.time) return;
+    if (c.time === last.time) d[d.length - 1] = { ...c }; else d.push({ ...c });
+    const { type: t, style: st } = view.current;
+    // Heikin Ashi / previous-close colouring depend on earlier bars, so derive the point from the last two bars only.
+    const tail = d.slice(-2); const from = t === 'heikin' ? d : tail;
+    const pts = seriesData(from, t, st);
+    S.main.update(pts[pts.length - 1]);
+    const vp = volData(tail, st); S.vol.update(vp[vp.length - 1]);
+    applyIndicators(false);
+  }, [applyIndicators]);
+
+  // ---- quote ticks update the last candle (non-Binance feeds, or when the kline stream is not delivering)
   useEffect(() => {
     let lastPrice = null;
     const unsub = useMarket.subscribe((m) => {
+      if (market === 'futures' || Date.now() - lastWs.current < 15e3) return; // WS candles are authoritative
       const q = m.quotes[symbol]; const d = data.current; const S = s.current;
       if (!q || !d.length || !S.main || q.price === lastPrice) return;
       lastPrice = q.price;
       const step = STEP[interval]; const bucket = Math.floor((q.ts || Date.now()) / 1000 / step) * step; // market time: closed markets do not grow empty candles
       const last = d[d.length - 1];
-      let c;
       if (bucket < last.time) return;
-      if (bucket > last.time) { c = { time: bucket, open: last.close, high: Math.max(last.close, q.price), low: Math.min(last.close, q.price), close: q.price, volume: 0 }; d.push(c); }
-      else { c = { ...last, close: q.price, high: Math.max(last.high, q.price), low: Math.min(last.low, q.price) }; d[d.length - 1] = c; }
-      const { type: t, style: st } = view.current;
-      // Heikin Ashi / previous-close colouring depend on earlier bars, so derive the point from the last two bars only.
-      const tail = d.slice(-2); const from = t === 'heikin' ? d : tail;
-      const pts = seriesData(from, t, st);
-      S.main.update(pts[pts.length - 1]);
-      const vp = volData(tail, st); S.vol.update(vp[vp.length - 1]);
-      applyIndicators(false);
+      applyCandle(bucket > last.time
+        ? { time: bucket, open: last.close, high: Math.max(last.close, q.price), low: Math.min(last.close, q.price), close: q.price, volume: 0 }
+        : { ...last, close: q.price, high: Math.max(last.high, q.price), low: Math.min(last.low, q.price) });
     });
     return unsub;
-  }, [symbol, interval, applyIndicators]);
+  }, [symbol, interval, market, applyCandle]);
+
+  // ---- live Binance candles over socket.io: the server keeps ONE multiplexed Binance WS per market and fans out
+  // to every viewer. Falls back to REST polling when the socket is missing (guests) or the stream goes quiet.
+  const isBinance = state.source === 'binance';
+  useEffect(() => {
+    if (!isBinance) { setLive(false); return undefined; }
+    lastWs.current = 0; setLive(false);
+    const sub = { symbol, interval, market };
+    let sock = null;
+    const onKline = (m) => {
+      if (m.market !== market || m.symbol !== symbol || m.interval !== interval) return;
+      if (!lastWs.current) setLive(true);
+      lastWs.current = Date.now(); applyCandle(m.candle);
+    };
+    const subscribe = () => sock?.emit('kline:sub', sub);
+    const attach = () => {
+      const cur = getSocket(); if (cur === sock) return;
+      if (sock) { sock.off('kline', onKline); sock.off('connect', subscribe); }
+      sock = cur; if (!sock) return;
+      sock.on('kline', onKline); sock.on('connect', subscribe); if (sock.connected) subscribe();
+    };
+    attach();
+    let busy = false;
+    const poll = setInterval(async () => {
+      attach(); // socket may appear after sign-in
+      if (Date.now() - lastWs.current < 15e3) return;
+      if (lastWs.current) { lastWs.current = 0; setLive(false); }
+      if (busy || document.hidden) return; busy = true;
+      try { const r = await api(`/market/klines${qs({ symbol, interval, limit: 20, market })}`); r.candles?.slice(-3).forEach(applyCandle); } catch { /* keep last candles */ } finally { busy = false; }
+    }, 10e3);
+    return () => { clearInterval(poll); if (sock) { sock.off('kline', onKline); sock.off('connect', subscribe); sock.emit('kline:unsub'); } };
+  }, [isBinance, symbol, interval, market, applyCandle, authed]);
 
   // ---- horizontal levels (signal entry / SL / TP, open positions)
   const levelsKey = JSON.stringify(levels);
@@ -257,12 +309,18 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
   const closeMenu = useCallback(() => setMenu(null), []);
   const typeLabel = CHART_TYPES.find((t) => t.value === type)?.label || 'Candles';
   const fmt = (v) => fmtPrice(v, precision);
+  const getChart = useCallback(() => chartRef.current, []);
+  const getSeries = useCallback(() => s.current.main, []);
+  const getData = useCallback(() => data.current, []);
+  const ivRef = useRef(interval); ivRef.current = interval;
+  const getStep = useCallback(() => STEP[ivRef.current] || 3600, []);
 
   return (
     <div className={clsx('flex flex-col min-w-0', className)}>
       <div className="flex flex-wrap items-center gap-2 px-3 py-2.5 border-b border-line">
         <SymbolPicker value={symbol} onChange={onSymbolChange || (() => {})} />
         <Segmented ariaLabel="Timeframe" size="sm" value={interval} onChange={setInterval_} options={FRAMES.map(([v, l]) => ({ value: v, label: l }))} />
+        {(isBinance || market === 'futures') && <Segmented ariaLabel="Binance market" size="sm" value={market} onChange={setMarket} options={[{ value: 'spot', label: 'Spot' }, { value: 'futures', label: 'Perp' }]} />}
         <div className="ml-auto flex items-center gap-1.5">
           <div className="relative">
             <button className="btn btn-ghost btn-sm gap-1" onClick={() => setMenu((m) => (m === 'type' ? null : 'type'))} aria-haspopup="menu" aria-expanded={menu === 'type'} aria-label={`Chart type: ${typeLabel}`} title="Chart type">
@@ -297,7 +355,9 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
           )}
         </div>
       </div>
-      <div className="relative flex-1 min-h-[280px]">
+      <ChartDrawings enabled={!compact} wrapperRef={wrapRef} canvasRef={canvasRef} regionClass="relative flex-1 min-h-[280px] min-w-0"
+        getChart={getChart} getSeries={getSeries} getData={getData} getStep={getStep}
+        storeKey={{ symbol, interval, market: isBinance || market === 'futures' ? market : 'spot' }} authed={authed} fmt={fmt} dataVersion={mainVer}>
         <div ref={host} className="absolute inset-0" role="img" aria-label={`${symbol} ${interval} price chart`} />
         {shown && (
           <div className="absolute left-3 top-2 z-10 max-w-[55%] flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[0.8125rem] num pointer-events-none">
@@ -312,7 +372,7 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
           </div>
         )}
         <div className="absolute right-3 top-2 z-10 flex items-center gap-1.5 pointer-events-none">
-          {state.source === 'binance' && <span className="badge badge-up !h-[18px] !text-[0.75rem]"><span className="live-dot !size-1.5" />Binance live</span>}
+          {state.source === 'binance' && <span className="badge badge-up !h-[18px] !text-[0.75rem]" title={live ? 'Live candles from the Binance WebSocket stream' : 'Binance REST (polling); live stream connecting'}><span className="live-dot !size-1.5" />Binance {market === 'futures' ? 'Perp' : 'Spot'}{live ? ' · WS' : ''}</span>}
           {state.source === 'yahoo' && <span className="badge badge-up !h-[18px] !text-[0.75rem]"><span className="live-dot !size-1.5" />Real data · Yahoo Finance</span>}
           {state.stale && <span className="badge badge-warn !h-[18px] !text-[0.75rem]">DELAYED</span>}
           {state.source === 'simulated' && <SimTag title="Simulated data: the live market feed is unavailable for this instrument" />}
@@ -320,7 +380,7 @@ export default memo(function PriceChart({ symbol, onSymbolChange, interval: inte
         {!state.loading && !state.error && state.source === 'unavailable' && <div className="absolute inset-0 z-20 grid place-items-center"><p className="glass glass-pop !rounded-xl px-4 py-3 text-[0.9375rem] text-mute text-center max-w-[18rem]">No free live feed is answering for this market right now. We never show made-up prices.</p></div>}
         {state.loading && <div className="absolute inset-0 z-20 grid place-items-center bg-bg/50"><Spinner className="text-accent-2" /></div>}
         {state.error && <div className="absolute inset-0 z-20 grid place-items-center bg-bg/80"><ErrorState message={state.error} onRetry={() => load()} /></div>}
-      </div>
+      </ChartDrawings>
       {!compact && <ChartSettings open={settingsOpen} onClose={() => setSettingsOpen(false)} style={style} setStyle={setStyle} type={type} />}
     </div>
   );

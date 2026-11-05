@@ -14,6 +14,7 @@ import authRoutes from './routes/auth.js';
 import signalRoutes from './routes/signals.js';
 import marketRoutes from './routes/market.js';
 import watchlistRoutes from './routes/watchlist.js';
+import drawingRoutes from './routes/drawings.js';
 import tradingRoutes from './routes/trading.js';
 import exportRoutes from './routes/exports.js';
 import adminRoutes from './routes/admin.js';
@@ -82,6 +83,7 @@ export function createApp() {
   app.use('/api/signals', signalRoutes);
   app.use('/api/market', marketRoutes);
   app.use('/api/watchlist', watchlistRoutes);
+  app.use('/api/drawings', drawingRoutes);
   app.use('/api/trading', tradingRoutes);
   app.use('/api/export', exportRoutes);
   app.use('/api/admin', adminRoutes);

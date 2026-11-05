@@ -216,3 +216,8 @@ Muhammad Arham · [GitHub Arham518](https://github.com/Arham518)
 ## License
 
 Add a license of your choice (for example MIT) before publishing.
+
+## Live Binance candles + drawing tools
+
+- **Live candles:** the server keeps ONE multiplexed Binance WebSocket per market (spot `stream.binance.com` / `data-stream.binance.vision`, USD-M futures `fstream.binance.com`), subscribes `<symbol>@kline_<tf>` streams on demand (ref-counted) and fans updates out over socket.io rooms. History still loads once over REST (`/api/market/klines?market=spot|futures`). If the stream is quiet for 15 s the chart falls back to REST polling. Status: `GET /api/market/stream-status`. Test a stream from a terminal with websocat (testing only): `websocat wss://stream.binance.com:9443/ws/btcusdt@kline_1m`.
+- **Drawings:** TradingView-style left toolbar on lightweight-charts (no Advanced Charts licence). Anchors are stored as `{ time, price }`, so drawings stay on their candles through zoom, scroll, resize and live updates. Saved per user + symbol + timeframe + market via `GET/PUT /api/drawings` (guests: localStorage). Code: `client/src/components/chartDrawings/`.

@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import rateLimit from 'express-rate-limit';
 import { wrap } from '../auth.js';
+import { klineStatus } from '../realtime.js';
 import { SYMBOLS } from '../services/symbols.js';
 import { getAllQuotes, getQuotes, getKlines, getSparklines, getNews, marketStatus, searchSymbols } from '../services/market.js';
 
@@ -24,8 +25,9 @@ router.get('/search', (req, res) => {
 router.get('/klines', wrap(async (req, res) => {
   const symbol = String(req.query.symbol || 'BTCUSDT').toUpperCase();
   if (!SYM.test(symbol)) return res.status(400).json({ error: 'Unknown symbol or interval' });
-  res.json(await getKlines(symbol, String(req.query.interval || '1h'), req.query.limit));
+  res.json(await getKlines(symbol, String(req.query.interval || '1h'), req.query.limit, req.query.market === 'futures' ? 'futures' : 'spot'));
 }));
+router.get('/stream-status', (req, res) => res.json(klineStatus()));
 router.get('/sparklines', wrap(async (req, res) => res.json({ sparklines: await getSparklines() })));
 router.get('/news', wrap(async (req, res) => res.json(await getNews())));
 export default router;

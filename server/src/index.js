@@ -2,6 +2,7 @@ import http from 'node:http';
 import { config } from './config.js';
 import './db.js';
 import * as persist from './persist.js';
+import { closeKlines } from './realtime.js';
 import { createApp } from './app.js';
 import { initRealtime, broadcastLive } from './realtime.js';
 import { startMarket, onTick, stopMarket, marketStatus } from './services/market.js';
@@ -34,7 +35,7 @@ export async function startServer({ port = config.port, quiet = false } = {}) {
   if (!quiet) console.log(`[server] http://localhost:${actual}  (${config.env})`);
   return {
     server, port: actual,
-    async close() { stopMarket(); stopCleanup(); await flushMaster(); await new Promise((r) => server.close(r)); await persist.shutdown(); },
+    async close() { stopMarket(); closeKlines(); stopCleanup(); await flushMaster(); await new Promise((r) => server.close(r)); await persist.shutdown(); },
   };
 }
 

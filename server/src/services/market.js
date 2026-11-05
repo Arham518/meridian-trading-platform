@@ -41,6 +41,7 @@ function hostPool(hosts) {
   };
 }
 const binance = hostPool(BINANCE_HOSTS);
+const binanceFutures = hostPool(['https://fapi.binance.com']);
 const yahoo = hostPool(YAHOO_HOSTS);
 
 function setQuote(symbol, q, source) {
@@ -261,25 +262,28 @@ async function yahooKlines(meta, interval, limit) {
   return rows.slice(-limit).map((c) => ({ time: c.time, open: round(c.open * k, dp), high: round(c.high * k, dp), low: round(c.low * k, dp), close: round(c.close * k, dp), volume: c.volume }));
 }
 
-export async function getKlines(symbol, interval = '1h', limit = 300) {
+export async function getKlines(symbol, interval = '1h', limit = 300, market = 'spot') {
   const meta = SYMBOL_MAP.get(symbol);
+  if (market !== 'futures' || meta?.feed !== 'binance') market = 'spot';
   if (!meta || !INTERVALS[interval]) throw Object.assign(new Error('Unknown symbol or interval'), { status: 400 });
   limit = Math.min(Math.max(Number(limit) || 300, 20), 1000);
-  const key = `${symbol}:${interval}:${limit}`; const hit = klineCache.get(key);
+  const key = `${market}:${symbol}:${interval}:${limit}`; const hit = klineCache.get(key);
   if (hit && Date.now() - hit.at < klineTtl(interval)) return hit.data;
   let candles = null; let source = 'unavailable';
   if (SIM) { if (meta.base > 0) { candles = simulatedKlines(meta, interval, limit); source = 'simulated'; } }
   else {
     try {
       if (meta.feed === 'binance') {
-        const rows = await binance(`/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
+        const rows = market === 'futures'
+          ? await binanceFutures(`/fapi/v1/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`)
+          : await binance(`/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`);
         candles = rows.map((r) => ({ time: Math.floor(r[0] / 1000), open: +r[1], high: +r[2], low: +r[3], close: +r[4], volume: +r[5] })); source = 'binance';
       } else { candles = await yahooKlines(meta, interval, limit); source = 'yahoo'; }
     } catch {
       if (hit) return { ...hit.data, stale: true }; // feed down: serve the last real candles
     }
   }
-  const data = { symbol, interval, source, candles: candles || [] };
+  const data = { symbol, interval, market, source, candles: candles || [] };
   if (candles?.length) klineCache.set(key, { at: Date.now(), data });
   if (klineCache.size > 500) klineCache.delete(klineCache.keys().next().value);
   return data;
